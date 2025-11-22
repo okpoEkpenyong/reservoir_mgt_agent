@@ -88,3 +88,7 @@ override.tf.json
 *.swo
 .releases/
 dist-*/
+
+.streamlit/
+*.streamlit/
+*.toml

@@ -4,3 +4,7 @@ pandas
 requests
 flask
 pytest
+openai
+faiss-cpu
+streamlit
+sentence_transformers

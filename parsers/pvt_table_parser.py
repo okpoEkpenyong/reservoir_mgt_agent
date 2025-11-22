@@ -59,6 +59,10 @@ class PVTParser:
     The class keeps a DataFrame with a 'pressure' column (float) in ascending order.
     """
 
+      parser = PVTParser.frm_csv(csv_tet)
+ressure' column (float) in ascending order.
+    """
+
     def __init__(self, df: pd.DataFrame):
         if 'pressure' not in df.columns:
             raise ValueError("DataFrame must contain a 'pressure' column")

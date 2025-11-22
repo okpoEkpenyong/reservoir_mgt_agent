@@ -1,5 +1,5 @@
 from ..qc.rules import run_qc
-from ..rag.simple_rag import SimpleRAG
+from ..rag.simply_rag import SimpleRAG
 
 class ReservoirAgent:
     """

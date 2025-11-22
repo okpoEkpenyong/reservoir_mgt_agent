@@ -1,0 +1,6 @@
+click
+numpy
+pandas
+requests
+flask
+pytest

@@ -7,7 +7,12 @@ reservoir management agent.
 import re
 
 def check_end_keyword(content: str):
-    """Return True if the 'END' keyword appears anywhere in the content."""
+    """Return True if the 'END' keyword appears anywhere in the content.
+
+    The function looks for a standalone 'END' keyword on its own line (ignoring
+    leading/trailing whitespace) to avoid matching words that contain 'END'.
+    """
+    return bool(re.search(r"^\s*END\b", content, flags=re.MULTILINE))
 def extract_well_names(block: str):
     """Extract well names quoted with single quotes from a text block and return them as a set."""
     names = set()

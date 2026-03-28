@@ -8,3 +8,5 @@ openai
 faiss-cpu
 streamlit
 sentence_transformers
+plotly
+openpyxl

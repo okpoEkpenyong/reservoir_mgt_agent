@@ -7,13 +7,12 @@ import plotly.express as px
 st.set_page_config(page_title="Exzing Reservoir Agent", page_icon="🛢️", layout="wide")
 
 # --- CUSTOM CSS FOR BRANDING ---
-st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stButton>button { background-color: #0078d4; color: white; border-radius: 5px; }
-    .sidebar .sidebar-content { background-image: linear-gradient(#2e7bcf,#2e7bcf); color: white; }
-    </style>
-    """, unsafe_content_as_True=True)
+#st.markdown("""
+#  .main { background-color: #f5f7f9; }
+#    .stButton>button { background-color: #0078d4; color: white; border-radius: 5px; }
+#    .sidebar .sidebar-content { background-image: linear-gradient(#2e7bcf,#2e7bcf); color: white; }
+#    </style>
+#    """, unsafe_content_as_True=True)
 
 # --- SIDEBAR / BRANDING ---
 st.sidebar.image("https://via.placeholder.com/150?text=Exzing+Tech", width=100) # Replace with your logo later
@@ -47,7 +46,8 @@ if menu == "Dashboard":
 
 elif menu == "Data Analysis":
     st.title("📊 Subsurface Data Analysis")
-    uploaded_file = st.file_file("Upload your Reservoir Data (CSV or Excel)", type=["csv", "xlsx"])
+    uploaded_file = st.sidebar.file_uploader("Upload your Reservoir Data (CSV or Excel)", type=["csv", "xlsx"])
+    #uploaded_file = st.sidebar.file_uploader("Upload VFP Data (THP, FlowRate, BHP)", type="csv")
     if uploaded_file:
         st.success("File uploaded successfully!")
         # Your actual reservoir logic would go here

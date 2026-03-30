@@ -1,0 +1,6 @@
+name: reservoir_mgt_agent
+services:
+  web:
+    project: .
+    language: python
+    host: appservice

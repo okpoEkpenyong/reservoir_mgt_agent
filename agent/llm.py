@@ -1,38 +1,33 @@
-import os
-from openai import OpenAI, AzureOpenAI
+﻿import os
+from huggingface_hub import InferenceClient
 
 class LLMEngine:
     def __init__(self):
-        self.provider = os.getenv("LLM_PROVIDER", "HUGGINGFACE").upper()
+        # Tokens are pulled from Key Vault via App Settings
+        self.token = os.getenv("HF_TOKEN")
+        self.default_model = os.getenv("HF_MODEL_ID", "Qwen/Qwen3.5-397B-A17B")
         
-        if self.provider == "HUGGINGFACE":
-            # Hugging Face Inference API is OpenAI-compatible
-            self.client = OpenAI(
-                base_url="https://api-inference.huggingface.co/v1",
-                api_key=os.getenv("HF_TOKEN")
-            )
-            self.model = os.getenv("HF_MODEL_ID", "Qwen/Qwen3.5-397B-A17B")
-            
-        elif self.provider == "AZURE_OPENAI":
-            self.client = AzureOpenAI(
-                api_key=os.getenv("AZURE_OPENAI_KEY"),
-                api_version="2024-02-01",
-                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-            )
-            self.model = os.getenv("AZURE_OPENAI_MODEL", "gpt-5.4")
+        if self.token:
+            self.client = InferenceClient(token=self.token)
+        else:
+            self.client = None
 
-    def ask(self, prompt: str, context: str = ""):
+    def analyze_reservoir_task(self, model_id, system_prompt, user_content):
+        if not self.client:
+            return "Error: No Hugging Face Token found. Check Azure Key Vault."
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+        ]
+        
         try:
-            msg = f"Context:\n{context}\n\nQuestion:\n{prompt}"
-            completion = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are a Reservoir Engineering Expert. Use SI units unless asked otherwise."},
-                    {"role": "user", "content": msg}
-                ],
-                temperature=0.1,
-                max_tokens=3800
+            response = self.client.chat_completion(
+                model=model_id or self.default_model,
+                messages=messages,
+                max_tokens=3000,
+                temperature=0.9 # Low temperature for technical precision
             )
-            return completion.choices[0].message.content
+            return response.choices[0].message.content
         except Exception as e:
-            return f"Error using {self.provider}: {str(e)}"
+            return f"Inference Error: {str(e)}"

@@ -1,12 +1,5 @@
-click
-numpy
+﻿streamlit
+huggingface_hub
 pandas
-requests
-flask
-pytest
-openai
-faiss-cpu
-streamlit
-sentence_transformers
+numpy
 plotly
-openpyxl

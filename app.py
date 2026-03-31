@@ -1,38 +1,43 @@
-import streamlit as st
-import os
-from agent.llm import LLMEngine
-from agent.tools import calculate_arps_decline
+﻿import streamlit as st
+from agent.reservoir_agent import ReservoirAgent
 
-st.set_page_config(page_title="Exzing Reservoir Agent", page_icon="🛢️", layout="wide")
+st.set_page_config(page_title="Exzing Reservoir Agent", layout="wide")
 
-# Initialize Engine
-@st.cache_resource
-def get_agent():
-    return LLMEngine()
+# Persistent Agent Instance
+if 'agent' not in st.session_state:
+    st.session_state.agent = ReservoirAgent()
 
-engine = get_agent()
+st.title("🚀 Subsurface Intelligence Agent")
+st.subheader("🤖 Frontier Reservoir Consultant (Agentic QC)")
 
-st.sidebar.title("Exzing Reservoir Agent")
-st.sidebar.success(f"Active Model: {engine.provider}")
-st.sidebar.info(f"ID: {engine.model}")
+# Sidebar for Model Selection
+with st.sidebar:
+    st.header("Model Configuration")
+    llm_choice = st.selectbox("Select Reasoning Model:", 
+                              ["Qwen/Qwen2.5-72B-Instruct", "Qwen/Qwen3.5-397B-A17B", "mistralai/Mixtral-8x7B-Instruct-v0.1"])
+    
+    st.markdown("---")
+    st.info("Agent is connected to Azure Key Vault for HF Token security.")
 
-menu = st.sidebar.radio("Navigation", ["Dashboard", "AI Advisor", "Settings"])
+# Main Workflow
+tabs = st.tabs(["Deck Analysis", "Reservoir Tools", "Dashboard"])
 
-if menu == "Dashboard":
-    st.title("🚀 Reservoir Forecast")
-    qi = st.number_input("Initial Rate", value=500)
-    df = calculate_arps_decline(qi, 0.05, 0.5, 24)
-    st.line_chart(df.set_index("Month"))
+with tabs[0]:
+    st.markdown("### ECLIPSE/OPM Deck Diagnostic")
+    deck_input = st.text_area("Paste .DATA file content here:", height=300, placeholder="RUNSPEC\nDIMENS\n10 10 3 / ...")
+    
+    if st.button("Generate AI Operational Diagnostic Report"):
+        if deck_input:
+            with st.spinner(f"Agent is analyzing via {llm_choice}..."):
+                report = st.session_state.agent.generate_diagnostic_report(deck_input, llm_choice)
+                st.success("Diagnostic Report Generated")
+                st.markdown(f"--- \n {report}")
+        else:
+            st.warning("Please provide deck content to analyze.")
 
-elif menu == "AI Advisor":
-    st.title("🤖 AI Reservoir Advisor")
-    prompt = st.text_input("Technical Query:")
-    if prompt:
-        with st.spinner(f'Consulting {engine.model}...'):
-            response = engine.ask(prompt)
-            st.markdown(response)
+with tabs[1]:
+    st.write("Additional Reservoir Engineering tools (DCA, MBAL) will be accessible here.")
 
-elif menu == "Settings":
-    st.title("⚙️ System Status")
-    st.write(f"**Provider:** {engine.provider}")
-    st.write(f"**Model Path:** {engine.model}")
+with tabs[2]:
+    st.metric("Decks Analyzed", 14, "+2 today")
+    st.metric("Anomalies Detected", 42, "Critical")

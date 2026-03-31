@@ -3,18 +3,23 @@ from huggingface_hub import InferenceClient
 
 class LLMEngine:
     def __init__(self):
-        # Tokens are pulled from Key Vault via App Settings
-        self.token = os.getenv("HF_TOKEN")
-        self.default_model = os.getenv("HF_MODEL_ID", "Qwen/Qwen3.5-397B-A17B")
+        # Retrieve the token
+        token = os.getenv("HF_TOKEN")
         
-        if self.token:
-            self.client = InferenceClient(token=self.token)
-        else:
+        # Validation: Check if Key Vault failed to provide the real secret
+        if not token:
             self.client = None
+            self.error = "HF_TOKEN environment variable is missing."
+        elif token.startswith("@Microsoft.KeyVault"):
+            self.client = None
+            self.error = "Key Vault Reference not resolved. Azure is still authenticating. Please wait 60s and refresh."
+        else:
+            self.client = InferenceClient(token=token)
+            self.error = None
 
     def analyze_reservoir_task(self, model_id, system_prompt, user_content):
-        if not self.client:
-            return "Error: No Hugging Face Token found. Check Azure Key Vault."
+        if self.error:
+            return self.error
         
         messages = [
             {"role": "system", "content": system_prompt},
@@ -22,12 +27,13 @@ class LLMEngine:
         ]
         
         try:
+            # We pass the model explicitly to avoid the auto-router error
             response = self.client.chat_completion(
-                model=model_id or self.default_model,
+                model=model_id,
                 messages=messages,
-                max_tokens=3000,
-                temperature=0.9 # Low temperature for technical precision
+                max_tokens=5000,
+                
             )
             return response.choices[0].message.content
         except Exception as e:
-            return f"Inference Error: {str(e)}"
+            return f"Hugging Face Error: {str(e)}"

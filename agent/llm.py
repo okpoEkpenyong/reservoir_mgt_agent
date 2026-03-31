@@ -1,39 +1,44 @@
 ﻿import os
-from huggingface_hub import InferenceClient
+from openai import OpenAI
 
 class LLMEngine:
     def __init__(self):
-        # Retrieve the token
-        token = os.getenv("HF_TOKEN")
+        self.provider = os.getenv("LLM_PROVIDER", "GROQ").upper()
         
-        # Validation: Check if Key Vault failed to provide the real secret
-        if not token:
-            self.client = None
-            self.error = "HF_TOKEN environment variable is missing."
-        elif token.startswith("@Microsoft.KeyVault"):
-            self.client = None
-            self.error = "Key Vault Reference not resolved. Azure is still authenticating. Please wait 60s and refresh."
-        else:
-            self.client = InferenceClient(token=token)
-            self.error = None
-
-    def analyze_reservoir_task(self, model_id, system_prompt, user_content):
-        if self.error:
-            return self.error
-        
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content}
-        ]
-        
-        try:
-            # We pass the model explicitly to avoid the auto-router error
-            response = self.client.chat_completion(
-                model=model_id,
-                messages=messages,
-                max_tokens=5000,
-                
+        if self.provider == "OPENAI":
+            # Groq is OpenAI-compatible but much faster
+            self.client = OpenAI(
+                base_url="https://api.groq.com/openai/v1",
+                api_key=os.getenv("GROQ_API_KEY")
             )
-            return response.choices[0].message.content
+            self.model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+            
+        elif self.provider == "QWEN":
+            self.client = OpenAI(
+                base_url="https://api.groq.com/openai/v1",
+                api_key=os.getenv("GROQ_API_KEY")
+            )
+            self.model = os.getenv("GROQ_MODEL", "qwen/qwen3-32b")
+
+    def ask(self, prompt: str, context: str = ""):
+        if not self.client.api_key:
+            return f"Error: {self.provider}_API_KEY is missing from Key Vault."
+            
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a Senior Reservoir Simulation Expert. Use professional technical language."},
+                    {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{prompt}"}
+                ],
+                temperature=1,
+                max_completion_tokens=8192,
+                top_p=1,
+                reasoning_effort="medium",
+                stream=True,
+                stop=None
+            )
+            #return response.choices[0].message.content
+             return response.choices[0].delta.content
         except Exception as e:
-            return f"Hugging Face Error: {str(e)}"
+            return f"{self.provider} Error: {str(e)}"

@@ -39,6 +39,6 @@ class LLMEngine:
                 stop=None
             )
             #return response.choices[0].message.content
-             return response.choices[0].delta.content
+            return response.choices[0].delta.content
         except Exception as e:
             return f"{self.provider} Error: {str(e)}"

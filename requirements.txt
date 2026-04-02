@@ -1,6 +1,8 @@
-﻿openai
-streamlit
-huggingface_hub
+﻿streamlit
+groq
+openai
 pandas
 numpy
 plotly
+python-dotenv
+huggingface_hub

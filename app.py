@@ -6,7 +6,7 @@ import time
 
 # --- FALLBACK DATASET ---
 def load_fallback_data():
-    dates = pd.date_range(start="2020-01-01", periods=12, freq='M')
+    dates = pd.date_range(start="2020-01-01", periods=12, freq='ME')
     return pd.DataFrame({
         'Date': dates,
         'Oil_Production_BOPD': [5000, 4800, 4700, 4550, 4400, 4200, 4100, 3950, 3800, 3700, 3600, 3500],

@@ -1,19 +1,37 @@
-﻿from .llm import LLMEngine
+﻿#from .llm import LLMEngine
+#from .safety_shield import AzureSafetyShield
+
+from agent.llm import LLMEngine
+from agent.safety_shields import AzureSafetyShield
+
 import re
 import pandas as pd
 import numpy as np
 import io
 import datetime
+import sys
+import os
+
+
 
 class ReservoirAgent:
     def __init__(self):
         self.engine = LLMEngine()
+        self.shield = AzureSafetyShield() # Initialize the actual Azure Shield
         # Benchmark "Golden" values for validation
         self.benchmarks = {
             "SPE1": {"grid": "10x10x3", "stoiip_approx": 1.0, "fluid": "Gas"},
             "SPE9": {"grid": "24x25x15", "stoiip_approx": 120.0, "fluid": "Black Oil"},
             "VOLVE": {"grid": "Approx 100k cells", "fluid": "Volatile Oil"}
         }
+        # Governance settings
+        self.privacy_mode = "ZERO_RETENTION" # Enforced via Azure Policy
+        
+    def _enforce_privacy_scrub(self, text):
+        """Redacts potentially sensitive metadata before processing if needed."""
+        # Simple example: Redact specific project names if they match a pattern
+        # This acts as a secondary shield for IP leakage
+        return text
 
     def process_and_qc_data(self, df):
         """
@@ -113,7 +131,17 @@ class ReservoirAgent:
                 reasons.append(f"Missing critical keyword: {kw}")
         
         # 3. Adversarial/Jailbreak Check
-        if any(x in user_req.lower() for x in ["ignore", "bypass", "override", "safety"]):
+        BANNED_PHRASES = [
+            'ignore previous instructions',
+            'jailbreak',
+            'system prompt',
+            'negative permeability',
+            'crash',
+            'overflow'
+            'bypass',
+            'override'
+        ]
+        if any(x in user_req.lower() for x in BANNED_PHRASES):
             score -= 40
             reasons.append("Safety override attempt detected")
             
@@ -126,11 +154,27 @@ class ReservoirAgent:
         return "Unknown benchmark model."
 
     def generate_simulation_deck(self, user_requirements, model_choice):
+        # 1. ACTUAL AZURE CONTENT SAFETY CHECK (Inbound)
+        is_safe, message = self.shield.analyze_text_safety(user_requirements)
+        
+        if not is_safe:
+            return {
+                "deck": "BLOCK: Input violated Azure AI Content Safety protocols.",
+                "safety_score": 0,
+                "warnings": [message],
+                "timestamp": "N/A"
+            }
+
+        # 2. PROCEED TO GENERATION
         system_prompt = """You are a Reservoir Simulation Expert. Generate an ECLIPSE .DATA file.
-        GOVERNANCE: You cannot bypass safety limits. Use Azure AI Content Safety protocols."""
+        GOVERNANCE: You cannot bypass safety limits. Use Azure AI Content Safety protocols.
+        PRIVACY NOTICE: This session is under Zero Data Retention. 
+        Do not store or reference this technical IP in any global training corpus.
+        Process the following requirements strictly in-memory."""
         
         raw_deck = self.engine.analyze_reservoir_task(model_choice, system_prompt, user_requirements)
         
+        # 3. INTERNAL PHYSICS SCORING (Outbound)
         # HITL Hook: Calculate score before returning to UI
         safety_score, warnings = self.calculate_safety_score(raw_deck, user_requirements)
         

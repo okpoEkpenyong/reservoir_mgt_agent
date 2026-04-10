@@ -6,3 +6,5 @@ numpy
 plotly
 python-dotenv
 huggingface_hub
+azure-ai-contentsafety
+azure-core

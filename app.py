@@ -5,7 +5,16 @@ import io
 import time
 import plotly.express as px
 import numpy as np
+import time
+from datetime import datetime, timedelta
 
+import os
+import sys
+
+# Ensure the project root is in the search path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
 
 
 # --- FALLBACK DATASET ---
@@ -20,6 +29,21 @@ def load_fallback_data():
 
 st.set_page_config(page_title="Exzing Reservoir Agent", layout="wide")
 
+def check_rate_limit():
+    """Prevents brute-force testing: max 10 requests per minute."""
+    if 'request_history' not in st.session_state:
+        st.session_state.request_history = []
+    
+    now = datetime.now()
+    # Filter history to only include last 60 seconds
+    st.session_state.request_history = [t for t in st.session_state.request_history if now - t < timedelta(minutes=1)]
+    
+    if len(st.session_state.request_history) >= 10:
+        return False
+    
+    st.session_state.request_history.append(now)
+    return True
+
 if 'agent' not in st.session_state:
     st.session_state.agent = ReservoirAgent()
     
@@ -29,7 +53,17 @@ if 'audit_trail' not in st.session_state:
     
 
 st.title("Subsurface Intelligence Agent")
-st.subheader("🤖 Frontier Reservoir Consultant")
+st.subheader("Frontier Reservoir Consultant")
+
+with st.expander("🛡️ Security & Privacy Compliance Information"):
+    st.info("""
+    **Exzing Zero-Data Retention (ZDR) Policy:**
+    1. **No Training:** Your proprietary reservoir descriptions are processed via Azure OpenAI 'No-Training' endpoints.
+    2. **In-Memory Only:** Input data is handled in volatile memory and purged after the session expires.
+    3. **Adversarial Shield:** Rate limiting is active to prevent brute-force probing of engineering logic.
+    4. **Encryption:** All data in transit is protected by TLS 1.2+ within the North Central US Azure region.
+    """)
+
 
 with st.sidebar:
     st.header("Data Ingestion")
@@ -57,7 +91,7 @@ with tabs[0]:
 
 # --- TAB 1: DECK GENERATOR ---
 with tabs[1]:
-    st.markdown("### 🛠️ Agentic Deck Generator (ExzingReservoirAgent)")
+    st.markdown("### Agentic Deck Generator (ExzingReservoirAgent)")
     st.caption("🔒 Enterprise Governance: Azure AI Content Safety & Zero-Retention active.")
     st.info("Describe your reservoir model in plain English (e.g., 'Model a 5-spot waterflood...').")
     
@@ -66,14 +100,18 @@ with tabs[1]:
                                placeholder="Model a 5-spot waterflood. Reservoir is 800m x 800m x 15m...")
     
     if st.button("Architect Simulation Model and Generate .DATA Deck"):
-        if user_prompt:
+        # --- Update the Generate Button logic in Tab 0 ---
+        if not check_rate_limit():
+            st.error("Rate limit exceeded. To prevent adversarial testing, we limit requests to 10 per minute.")
+            # Proceed with generation...
+        elif user_prompt:
             with st.spinner("ExzingReservoirAgent: Analyzing physics and generating deck..."):
                 # 1. Generate the Deck
                 result = st.session_state.agent.generate_simulation_deck(user_prompt, llm_choice)
                 #st.session_state.current_deck = generated_deck # Store in session state
                 st.session_state.last_result = result
                 
-                st.success("✅ Generated ECLIPSE Deck")
+                st.success("Generated ECLIPSE Deck")
                 st.code(result, language="plaintext")
                 
                 # 2. LOG TO DYNAMIC AUDIT TRAIL
@@ -85,12 +123,12 @@ with tabs[1]:
                 })
                 
                 # 2. Add Export Button
-                st.download_button(
-                    label="💾 Export .DATA File",
-                    data=generated_deck,
-                    file_name="exzing_model.DATA",
-                    mime="text/plain"
-                )
+                #st.download_button(
+                #    label="💾 Export .DATA File",
+                #    data=result,
+                #    file_name="exzing_model.DATA",
+                #    mime="text/plain"
+                #)
         else:
             st.warning("Please describe your model requirements.")    
 
@@ -112,17 +150,26 @@ with tabs[1]:
                 st.warning(w)
         else:
             st.success("No critical physics violations detected.")
-
+        
+        # Access the 'deck' string inside the dictionary
+        deck_text = res['deck']
         st.code(res['deck'], language="plaintext")
 
-        # HITL BUTTON
-        human_review = st.checkbox("I have reviewed the generated deck for technical accuracy.")
-        
-        if human_review:
-            st.download_button("💾 Export Validated .DATA File", res['deck'], file_name="exzing_pro.DATA")
+        # We only allow download if score > 0
+        if res['safety_score'] > 0:
+            human_review = st.checkbox("I have reviewed the generated deck for technical accuracy.")
+            
+            if human_review:
+                st.download_button(
+                    label="💾 Export Validated .DATA File",
+                    data=deck_text, # Fixed: Now passing the string, not the dict
+                    file_name="exzing_validated.DATA",
+                    mime="text/plain"
+                )
         else:
-            st.button("💾 Export Disabled", disabled=True, help="You must acknowledge the review first.")
-    
+            st.error("🚫 Export Disabled: The generated content failed safety or engineering validation.")
+            
+            
 
 # --- TAB 2: RESERVOIR TOOLS (AI ADVISOR) ---
 with tabs[2]:

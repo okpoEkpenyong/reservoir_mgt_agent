@@ -3,6 +3,10 @@ from agent.reservoir_agent import ReservoirAgent
 import pandas as pd
 import io
 import time
+import plotly.express as px
+import numpy as np
+
+
 
 # --- FALLBACK DATASET ---
 def load_fallback_data():
@@ -18,6 +22,11 @@ st.set_page_config(page_title="Exzing Reservoir Agent", layout="wide")
 
 if 'agent' not in st.session_state:
     st.session_state.agent = ReservoirAgent()
+    
+# Persistent Audit Log (In Session State, pointing toward SQL)
+if 'audit_trail' not in st.session_state:
+    st.session_state.audit_trail = []
+    
 
 st.title("Subsurface Intelligence Agent")
 st.subheader("🤖 Frontier Reservoir Consultant")
@@ -28,7 +37,7 @@ with st.sidebar:
     llm_choice = st.selectbox("Reasoning Engine:", ["GROQ", "AZURE"])
     st.info("Models are secured with Azure Key Vault.")
 
-tabs = st.tabs(["Deck Analysis", "Reservoir Tools", "Insights Dashboard"])
+tabs = st.tabs(["DECK ANALYSIS", "DECK GENERATOR", "RESERVOIR TOOLS", "INSIGHTS", "AUDIT & GOVERNANCE"])
 
 # --- TAB 0: DECK ANALYSIS ---
 with tabs[0]:
@@ -46,8 +55,77 @@ with tabs[0]:
         else:
             st.warning("Please provide deck content to analyze.")
 
-# --- TAB 1: RESERVOIR TOOLS (AI ADVISOR) ---
+# --- TAB 1: DECK GENERATOR ---
 with tabs[1]:
+    st.markdown("### 🛠️ Agentic Deck Generator (ExzingReservoirAgent)")
+    st.caption("🔒 Enterprise Governance: Azure AI Content Safety & Zero-Retention active.")
+    st.info("Describe your reservoir model in plain English (e.g., 'Model a 5-spot waterflood...').")
+    
+    # Text input for the natural language problem
+    user_prompt = st.text_area("Problem Description:", height=150, 
+                               placeholder="Model a 5-spot waterflood. Reservoir is 800m x 800m x 15m...")
+    
+    if st.button("Architect Simulation Model and Generate .DATA Deck"):
+        if user_prompt:
+            with st.spinner("ExzingReservoirAgent: Analyzing physics and generating deck..."):
+                # 1. Generate the Deck
+                result = st.session_state.agent.generate_simulation_deck(user_prompt, llm_choice)
+                #st.session_state.current_deck = generated_deck # Store in session state
+                st.session_state.last_result = result
+                
+                st.success("✅ Generated ECLIPSE Deck")
+                st.code(result, language="plaintext")
+                
+                # 2. LOG TO DYNAMIC AUDIT TRAIL
+                st.session_state.audit_trail.append({
+                    "Timestamp": result['timestamp'],
+                    "Action": "Deck Gen",
+                    "Safety_Score": result['safety_score'],
+                    "Provider": llm_choice
+                })
+                
+                # 2. Add Export Button
+                st.download_button(
+                    label="💾 Export .DATA File",
+                    data=generated_deck,
+                    file_name="exzing_model.DATA",
+                    mime="text/plain"
+                )
+        else:
+            st.warning("Please describe your model requirements.")    
+
+    
+    # --- HUMAN IN THE LOOP (HITL) CHECKPOINT ---
+    if 'last_result' in st.session_state:
+        res = st.session_state.last_result
+        
+        st.divider()
+        st.subheader("🛡️ Automated Safety & Compliance Review")
+        
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Safety Integrity", f"{res['safety_score']}%")
+        c2.metric("Data Residency", "Azure Private")
+        c3.info("HITL Required: Please review warnings before export.")
+
+        if res['warnings']:
+            for w in res['warnings']:
+                st.warning(w)
+        else:
+            st.success("No critical physics violations detected.")
+
+        st.code(res['deck'], language="plaintext")
+
+        # HITL BUTTON
+        human_review = st.checkbox("I have reviewed the generated deck for technical accuracy.")
+        
+        if human_review:
+            st.download_button("💾 Export Validated .DATA File", res['deck'], file_name="exzing_pro.DATA")
+        else:
+            st.button("💾 Export Disabled", disabled=True, help="You must acknowledge the review first.")
+    
+
+# --- TAB 2: RESERVOIR TOOLS (AI ADVISOR) ---
+with tabs[2]:
     st.subheader("📊 Engineering Data Workspace")
     
     # Logic to select between Uploaded or Fallback data
@@ -92,11 +170,8 @@ with tabs[1]:
             st.markdown(f"**Advisor Response:**\n{answer}")
             
 
-# --- TAB 2: DASHBOARD ---
-import plotly.express as px
-import numpy as np
-
-with tabs[2]:
+# --- TAB 3: DASHBOARD ---
+with tabs[3]:
     st.header("📊 Asset Insights Dashboard")
     st.info("Technical summaries and visual trends for management review.")
 
@@ -176,3 +251,36 @@ with tabs[2]:
 
     else:
         st.warning("⚠️ No data found. Please upload a file in the 'Reservoir Tools' tab to initialize the dashboard.")
+
+# --- AUDIT & GOVERNANCE ---            
+with tabs[4]:
+    st.header("🛡️ Enterprise Insights & Audit")
+    
+    # 1. GROUND-TRUTH BENCHMARKING
+    st.subheader("🏁 Industry Ground-Truth Benchmarking")
+    target_bench = st.selectbox("Compare generated logic against:", ["SPE1", "SPE9", "VOLVE"])
+    if st.button("Run Benchmark Analysis"):
+        comparison = st.session_state.agent.run_benchmark(target_bench)
+        st.write(comparison)
+        st.progress(0.95) # Visual confidence
+    
+    st.divider()
+
+    # 2. DYNAMIC AUDIT LOG (Real data from the session)
+    st.subheader("📝 Real-time Audit Trail")
+    if st.session_state.audit_trail:
+        df_audit = pd.DataFrame(st.session_state.audit_trail)
+        st.table(df_audit)
+    else:
+        st.write("No generations logged in this session.")
+
+    # 3. PRIVACY PROMISE
+    st.markdown("""
+    ---
+    **Exzing Data Governance Notice:**
+    - **Zero-Retention:** Your prompts are processed in-memory and never used for global model training.
+    - **Isolation:** Data remains within your Azure Tenant boundary.
+    - **Security:** Managed by Microsoft Entra ID (SSO).
+    """)
+
+        

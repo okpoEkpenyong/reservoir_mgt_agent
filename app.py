@@ -17,6 +17,7 @@ if current_dir not in sys.path:
     sys.path.append(current_dir)
 
 
+
 # --- FALLBACK DATASET ---
 def load_fallback_data():
     dates = pd.date_range(start="2020-01-01", periods=12, freq='ME')
@@ -52,6 +53,100 @@ if 'audit_trail' not in st.session_state:
     st.session_state.audit_trail = []
     
 
+# --- INDUSTRIAL UI ENHANCEMENTS ---
+st.markdown("""
+    <style>
+    /* 1. Global Font and Background */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    
+    html, body, [class*="css"]  {
+        font-family: 'Inter', sans-serif;
+        background-color: #fcfcfc;
+    }
+
+    /* 2. Command Center Sidebar */
+    [data-testid="stSidebar"] {
+        background: #FEAC5E !important; /* Fallback */
+        background: linear-gradient(to bottom, #FEAC5E, #cbdcee, #cbdcee) !important;
+        border-right: 1px solid #e0e0e0;
+    }
+    [data-testid="stSidebar"] .nav-link { color: white !important; }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    /* 3. Metrics / KPI Cards */
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        border: 1px solid #eef0f2;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    [data-testid="stMetricLabel"] {
+        color: #6c757d !important;
+        font-size: 0.85rem !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    [data-testid="stMetricValue"] {
+        color: #0078d4 !important; /* Azure Blue */
+        font-weight: 700 !important;
+    }
+
+    /* 4. Professional Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 24px;
+        background-color: #fcfcfc;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: transparent;
+        border-radius: 4px 4px 0px 0px;
+        color: #495057;
+        font-weight: 400;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #0078d4 !important;
+        border-bottom: 2px solid #0078d4 !important;
+        font-weight: 600 !important;
+    }
+
+    /* 5. Industrial Buttons */
+    .stButton>button {
+        width: 100%;
+        border-radius: 4px;
+        height: 3em;
+        background-color: #0078d4;
+        color: white;
+        border: none;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stButton>button:hover {
+        background-color: #005a9e;
+        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+    }
+
+    /* 6. Clean Data Tables */
+    [data-testid="stDataFrame"] {
+        border: 1px solid #eef0f2;
+        border-radius: 8px;
+    }
+
+    /* 7. Warnings and Success */
+    .stAlert {
+        border-radius: 6px;
+        border: none;
+    }
+    </style>
+    """, unsafe_allow_html=True)    
+    
+
 st.title("Subsurface Intelligence Agent")
 st.subheader("Frontier Reservoir Consultant")
 
@@ -65,10 +160,11 @@ with st.expander("🛡️ Security & Privacy Compliance Information"):
     """)
 
 
+
 with st.sidebar:
     st.header("Data Ingestion")
     uploaded_file = st.file_uploader("Upload Subsurface Data (CSV/XLSX)", type=["csv", "xlsx"])
-    llm_choice = st.selectbox("Reasoning Engine:", ["GROQ", "AZURE"])
+    llm_choice = st.selectbox("Reasoning Engine:", ["GROQ", "AZURE"], help="AZURE: High-compliance GPT-5-main. GROQ: openai/gpt-oss-120b High-speed technical reasoning.")
     st.info("Models are secured with Azure Key Vault.")
 
 tabs = st.tabs(["DECK ANALYSIS", "DECK GENERATOR", "RESERVOIR TOOLS", "INSIGHTS", "AUDIT & GOVERNANCE"])
@@ -173,8 +269,22 @@ with tabs[1]:
 
 # --- TAB 2: RESERVOIR TOOLS (AI ADVISOR) ---
 with tabs[2]:
-    st.subheader("📊 Engineering Data Workspace")
+    st.subheader("Engineering Data Workspace")
+    # Check if data exists, if not, show a 'Professional Placeholder'
+    if uploaded_file is None:
+        st.markdown("""
+            <div style="text-align: center; padding: 50px;">
+                <h2 style="color: #adb5bd;">Awaiting Asset Configuration</h2>
+                <p style="color: #ced4da;">Please upload your production history or ECLIPSE requirements in the sidebar to initialize the AI Advisor.</p>
+                <img src="https://cdn-icons-png.flaticon.com/512/3090/3090011.png" width="100" style="opacity: 0.1;">
+            </div>
+        """, unsafe_allow_html=True)
     
+    # Show small, technical 'Capabilities' cards instead of a blank screen
+    c1, c2, c3 = st.columns(3)
+    c1.info("**Field Architect:** Generate .DATA decks based on SPE ground-truth.")
+    c2.info("**Asset Intel:** Automated QC and anomaly detection for history data.")
+    c3.info("**Compliance:** Azure Content Safety and Zero-Data Retention verified.")
     # Logic to select between Uploaded or Fallback data
     if uploaded_file:
         df_raw = pd.read_csv(uploaded_file)
@@ -299,19 +409,134 @@ with tabs[3]:
     else:
         st.warning("⚠️ No data found. Please upload a file in the 'Reservoir Tools' tab to initialize the dashboard.")
 
-# --- AUDIT & GOVERNANCE ---            
+# --- AUDIT & GOVERNANCE ---  
+
 with tabs[4]:
-    st.header("🛡️ Enterprise Insights & Audit")
+    st.markdown("### 🧬 ExzingReservoirAgent Scenario Lab")
     
-    # 1. GROUND-TRUTH BENCHMARKING
-    st.subheader("🏁 Industry Ground-Truth Benchmarking")
-    target_bench = st.selectbox("Compare generated logic against:", ["SPE1", "SPE9", "VOLVE"])
-    if st.button("Run Benchmark Analysis"):
-        comparison = st.session_state.agent.run_benchmark(target_bench)
-        st.write(comparison)
-        st.progress(0.95) # Visual confidence
+    # MASTER SELECTOR
+    scenario_type = st.radio("Choose Scenario Source:", 
+                            ["Field Analogues (Real-World)", "Technical Benchmarks (100 Cases)", "Safety Stress Tests (50 Cases)"],
+                            horizontal=True)
+
+    final_prompt = ""
+    selected_context = None
+
+    # 1. Update Technical Benchmarks Section
+    if scenario_type == "Technical Benchmarks (100 Cases)":
+        categories = st.session_state.agent.benchmarks
+        if categories:
+            cat_names = [c['name'] for c in categories]
+            cat_choice = st.selectbox("Category:", cat_names)
+            
+            # SAFE SEARCH: Returns None instead of throwing StopIteration
+            selected_cat = next((c for c in categories if c['name'] == cat_choice), None)
+            
+            if selected_cat:
+                prompt_data = st.selectbox("Select Test Case:", 
+                                         selected_cat['prompts'], 
+                                         format_func=lambda x: f"ID {x['id']}: {x['prompt'][:60]}...")
+                final_prompt = prompt_data['prompt']
+                st.success(f"**Target Difficulty:** {prompt_data['difficulty']}")
+        else:
+            st.error("Technical Benchmark file not found or empty.")
+
+    # 2. Update Safety Stress Tests Section
+    elif scenario_type == "Safety Stress Tests (50 Cases)":
+        categories = st.session_state.agent.adversarial
+        if categories:
+            cat_names = [c['name'] for c in categories]
+            cat_choice = st.selectbox("Category:", cat_names)
+            
+            # SAFE SEARCH
+            selected_cat = next((c for c in categories if c['name'] == cat_choice), None)
+            
+            if selected_cat:
+                prompt_data = st.selectbox("Select Attack Prompt:", 
+                                         selected_cat['prompts'], 
+                                         format_func=lambda x: f"ID {x['id']}: {x['attack_type']}")
+                final_prompt = prompt_data['prompt']
+                selected_context = {"expected_behavior": selected_cat['expected_behavior']}
+                st.warning(f"**Testing:** {prompt_data['attack_type']} | **Expected:** {prompt_data['expected_response']}")
+        else:
+            st.error("Safety Stress Test file not found or empty.") 
+            
+    elif scenario_type == "Field Analogues (Real-World)":
+        analogues = st.session_state.agent.analogues
+        if analogues:       
+            choice = st.selectbox("Select Field Analogue:", [f['name'] for f in analogues])
+            selected_context = next((f for f in analogues if f['name'] == choice), None)
+            
+            if selected_context:                
+                st.info(f"**Geology:** {selected_context['geology']} \n\n **Link:** [Source Data]({selected_context['source_url']})")
+                final_prompt = st.text_area("Operational Request:", placeholder="e.g. Model a horizontal producer...")
+        else:
+            st.error("Safety Stress Test file not found or empty.")         
     
-    st.divider()
+    # UNIFIED EXECUTION BUTTON
+    if st.button("Run Architect Engine", key="run_engine_btn"):
+        if final_prompt:
+            with st.spinner("ExReservoirGPT is processing field physics..."):
+                # 1. Generate the result
+                result = st.session_state.agent.generate_with_context(final_prompt, llm_choice, selected_context)
+                
+                # 2. Store in session state so it doesn't disappear on next UI interaction
+                st.session_state.last_result = result
+                
+                # 3. Log to the persistent Audit Trail
+                st.session_state.audit_trail.append({
+                    "Timestamp": result['timestamp'],
+                    "Scenario": scenario_type,
+                    "Safety_Score": result['safety_score'],
+                    "Provider": llm_choice
+                })
+        else:
+            st.warning("Please select or enter a technical requirement.")
+
+    # --- DISPLAY THE ARCHITECTED RESULT (HITL WORKFLOW) ---
+    if 'last_result' in st.session_state:
+        res = st.session_state.last_result
+        
+        st.divider()
+        st.subheader("🛡️ Engineering Validation & Safety Review")
+        
+        # A. Governance Metrics
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Safety Integrity", f"{res['safety_score']}%")
+        m2.metric("Physics Realism", "Validated" if res['safety_score'] > 70 else "Low Confidence")
+        m3.metric("Data Context", "Azure Encrypted")
+
+        # B. Show Safety/Physics Warnings
+        if res['warnings']:
+            for warning in res['warnings']:
+                st.warning(warning)
+        else:
+            st.success("✅ No critical physics or safety violations detected.")
+
+        # C. Display the Generated Deck
+        st.markdown("### Generated ECLIPSE .DATA File")
+        st.code(res['deck'], language="plaintext")
+
+        # D. Human-in-the-Loop (HITL) Requirement
+        if res['safety_score'] > 0:
+            st.info("💡 **HITL Required:** Please review the generated deck above for engineering accuracy.")
+            
+            # The checkbox acts as the 'manual trigger' for the export button
+            human_reviewed = st.checkbox("I verify that I have reviewed this deck and accept responsibility for simulator runtime.", key="hitl_check")
+            
+            if human_reviewed:
+                st.download_button(
+                    label="💾 Export Validated .DATA File",
+                    data=res['deck'],
+                    file_name=f"exzing_{datetime.now().strftime('%Y%m%d')}.DATA",
+                    mime="text/plain",
+                    help="Click to download the ECLIPSE/OPM compatible deck."
+                )
+            else:
+                st.button("💾 Export Locked", disabled=True, help="Acknowledge the technical review to unlock export.")
+        else:
+            st.error("🚫 Export Blocked: The generated output failed safety or technical validation.")    
+
 
     # 2. DYNAMIC AUDIT LOG (Real data from the session)
     st.subheader("📝 Real-time Audit Trail")
@@ -330,4 +555,24 @@ with tabs[4]:
     - **Security:** Managed by Microsoft Entra ID (SSO).
     """)
 
-        
+
+# --- PERSISTENT FOOTER DISCLAIMER ---
+st.markdown("---")
+st.markdown(
+    """
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; text-align: center;">
+        <p style="color: #856404; font-size: 0.9rem; margin-bottom: 0;">
+            <strong>⚠️ Engineering Disclaimer:</strong> ExzingReservoirAgent is an AI-powered technical assistant. 
+            All generated simulation decks, diagnostics, and reports are <strong>provisional</strong> and must be 
+            independently reviewed and validated by a qualified professional reservoir engineer before operational use. 
+            Exzing Technology Ltd accepts no liability for outcomes resulting from the use of AI-generated content.
+        </p>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
+
+# Also added to the sidebar for constant visibility
+st.sidebar.markdown("---")
+st.sidebar.caption("🛡️ **Governance Status:** AI Content Safety Active")
+st.sidebar.caption("© 2026 Exzing Technology Ltd")        

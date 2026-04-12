@@ -1,0 +1,663 @@
+{
+  "test_suite": "ReservoirGPT .DATA File Generation - 100 Test Cases",
+  "version": "1.0",
+  "created": "2026-04-10",
+  "categories": [
+    {
+      "name": "Basic Homogeneous Reservoirs",
+      "description": "Simple cases - should pass 100%",
+      "expected_pass_rate": 1.0,
+      "prompts": [
+        {
+          "id": 1,
+          "prompt": "Single vertical well producing from a 500m x 500m x 10m homogeneous sandstone reservoir. Permeability 100 mD, porosity 20%. Oil viscosity 2 cP. Run for 5 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 2,
+          "prompt": "Small square reservoir, 300m on each side, 15m thick. One producer in the center. Permeability 150 mD, porosity 18%. Run for 3 years with monthly timesteps.",
+          "difficulty": "easy",
+          "expected_grid_size": "small"
+        },
+        {
+          "id": 3,
+          "prompt": "Homogeneous reservoir 1km x 1km x 20m. Permeability 80 mD, porosity 22%. Two vertical producers 500m apart. Oil gravity 35 API. Simulate for 10 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 4,
+          "prompt": "Simple box model: 400m x 400m x 12m. Single well. Perm 120 mD, porosity 19%. Oil at 2000 psi initial pressure. Run 5 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "small"
+        },
+        {
+          "id": 5,
+          "prompt": "Rectangular reservoir 800m x 600m x 18m. Homogeneous properties: k=200mD, phi=25%. One producer, no injection. 7-year simulation.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 6,
+          "prompt": "Small homogeneous model for testing: 200m cube, 10m thick. Permeability 50 mD, porosity 15%. Single well, 2-year run.",
+          "difficulty": "easy",
+          "expected_grid_size": "small"
+        },
+        {
+          "id": 7,
+          "prompt": "Basic reservoir: 500x500x20 meters. Uniform properties throughout. Permeability 100mD, porosity 20%. One production well, 5 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 8,
+          "prompt": "Homogeneous sandstone, 600m x 600m x 15m. Perm 180 mD, porosity 21%. Single vertical producer. Simulate for 4 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 9,
+          "prompt": "Simple model: 1000m x 1000m x 25m. Constant permeability 150 mD, porosity 23%. One well, 10-year forecast.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 10,
+          "prompt": "Square reservoir 700m sides, 12m thick. Homogeneous: k=90mD, phi=17%. One producer, 6-year simulation.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 11,
+          "prompt": "Basic test case: 300x300x10m reservoir. Permeability 120mD everywhere. Porosity 20%. Single well, 3 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "small"
+        },
+        {
+          "id": 12,
+          "prompt": "Homogeneous oil reservoir, 500m x 500m x 18m. Properties: perm=110mD, poro=19%. One producer, 5-year run.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 13,
+          "prompt": "Simple rectangular model: 900m x 600m x 20m. Uniform k=140mD, phi=22%. Single well, 8 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 14,
+          "prompt": "Small homogeneous reservoir for sensitivity study: 400x400x15m. k=100mD, phi=20%. One well, 5 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "small"
+        },
+        {
+          "id": 15,
+          "prompt": "Basic box model: 1km square, 30m thick. Homogeneous properties k=200mD, phi=25%. Single producer, 12 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "moderate"
+        }
+      ]
+    },
+    {
+      "name": "Waterflood Scenarios",
+      "description": "Should handle injection patterns",
+      "expected_pass_rate": 0.95,
+      "prompts": [
+        {
+          "id": 16,
+          "prompt": "5-spot waterflood pattern. 1000m x 1000m x 20m reservoir. Permeability 150 mD, porosity 22%. 1 producer in center, 4 water injectors at corners. Run for 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 17,
+          "prompt": "Line drive waterflood: 1500m x 500m x 15m. Three producers on one side, three injectors on opposite side. k=120mD, phi=20%. 15-year simulation.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 18,
+          "prompt": "Inverted 5-spot: 800m x 800m x 18m. 4 producers at corners, 1 injector in center. Perm 100mD, porosity 19%. Injection rate 2000 bbl/day. 8 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 19,
+          "prompt": "Simple waterflood: 600m x 600m x 12m. 1 producer, 1 injector 300m apart. k=180mD, phi=23%. Inject at 1500 bbl/day, 5 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 20,
+          "prompt": "7-spot pattern: hexagonal arrangement, 1200m across. 1 central injector, 6 surrounding producers. k=140mD, phi=21%. 12-year forecast.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 21,
+          "prompt": "Staggered line drive: 2000m x 800m x 25m. Producers and injectors in alternating rows. k=110mD, phi=18%. 20 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 22,
+          "prompt": "Peripheral waterflood: 1500m x 1500m x 30m. 4 producers in center, 8 injectors around perimeter. k=160mD, phi=24%. 15 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 23,
+          "prompt": "3-spot pattern: 600m triangle. 2 injectors, 1 producer. k=90mD, phi=17%. Injection 1000 bbl/day each. 6 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 24,
+          "prompt": "Crestal injection: 1000m x 1000m x 40m dipping reservoir. 2 injectors at crest, 4 producers downdip. k=200mD, phi=26%. 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 25,
+          "prompt": "9-spot pattern: 1200m x 1200m x 20m. 1 central injector, 8 producers in 3x3 grid. k=130mD, phi=20%. 12 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 26,
+          "prompt": "Direct line drive: 1000m x 600m x 18m. 2 injectors on west, 2 producers on east. k=150mD, phi=22%. 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 27,
+          "prompt": "Pattern flood: 2000m x 2000m x 25m. Multiple 5-spot patterns. k=140mD, phi=21%. 15-year simulation.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 28,
+          "prompt": "Pilot waterflood: 400m x 400m x 10m. 1 injector, 2 producers. Test case before full field. k=100mD, phi=19%. 3 years.",
+          "difficulty": "easy",
+          "expected_grid_size": "small"
+        },
+        {
+          "id": 29,
+          "prompt": "Skewed 5-spot: 900m x 700m x 16m. Non-symmetric pattern due to field constraints. k=120mD, phi=20%. 8 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 30,
+          "prompt": "Edge water drive simulation: 1500m x 500m x 20m. Injectors along one long edge. k=180mD, phi=24%. 12 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        }
+      ]
+    },
+    {
+      "name": "Heterogeneous Reservoirs",
+      "description": "Tests handling of layered/variable properties",
+      "expected_pass_rate": 0.90,
+      "prompts": [
+        {
+          "id": 31,
+          "prompt": "Two-layer reservoir: 1000m x 1000m. Top layer 10m thick, k=200mD, phi=25%. Bottom layer 15m thick, k=50mD, phi=15%. Single producer. 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 32,
+          "prompt": "Three-layer model: 800m x 800m. Layer 1: 8m, k=300mD. Layer 2: 12m, k=100mD. Layer 3: 10m, k=30mD. Porosity varies 25%, 20%, 15%. 8 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 33,
+          "prompt": "Permeability trend: 1200m x 600m x 20m. Permeability decreases from 200mD in north to 80mD in south. Linear gradient. Porosity constant 20%. 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 34,
+          "prompt": "Fining upward sequence: 1000m x 1000m. 5 layers, 6m each. Permeability increases with depth: 50, 100, 150, 200, 250 mD. Porosity 18-24%. 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 35,
+          "prompt": "Channel reservoir: 2000m x 800m x 15m. High perm channel (k=400mD) 200m wide down center. Background k=80mD. 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 36,
+          "prompt": "Compartmentalized reservoir: 1500m x 1500m x 25m. Three zones separated by low-perm barriers. Zone perms: 150, 120, 180 mD. 20 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 37,
+          "prompt": "Heterogeneous layers: 600m x 600m. Four 5m layers with k= 100, 300, 50, 200 mD. Variable porosity 18-26%. 2 producers. 8 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 38,
+          "prompt": "Graded bedding: 800m x 800m x 30m. 10 thin layers with permeability cycling 100-200-100 mD. Porosity 19-23%. 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 39,
+          "prompt": "Pinchout geometry: 1000m x 1000m. Reservoir thins from 30m in north to 5m in south. Permeability constant 140mD. 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 40,
+          "prompt": "Dual porosity system: 1200m x 1200m x 20m. Matrix k=20mD, phi=18%. Fracture k=2000mD, phi=2%. Single producer. 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 41,
+          "prompt": "Shale barrier model: 1000m x 1000m x 40m. Continuous shale at 20m depth (k=0.01mD). Sand above/below k=150mD. 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 42,
+          "prompt": "Areal heterogeneity: 1500m x 1500m x 18m. Permeability varies spatially 50-250mD following log-normal distribution. 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 43,
+          "prompt": "Turbidite sequence: 2000m x 600m x 25m. Alternating high-perm lobes (k=300mD) and low-perm drape (k=40mD). 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 44,
+          "prompt": "Layered with crossflow: 800m x 800m. 3 layers: k=200, 100, 150 mD. Varying vertical permeability 10-50mD. 8 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 45,
+          "prompt": "Heterogeneous waterflood: 1000m x 1000m x 20m. 5-spot pattern. Permeability varies 80-220mD. Porosity 17-24%. 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        }
+      ]
+    },
+    {
+      "name": "Gas Reservoirs & Gas Cap",
+      "description": "Different fluid types",
+      "expected_pass_rate": 0.85,
+      "prompts": [
+        {
+          "id": 46,
+          "prompt": "Gas condensate reservoir: 1000m x 1000m x 30m. Initial pressure 5000 psi. k=120mD, phi=20%. Gas gravity 0.65. 3 producers, 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 47,
+          "prompt": "Gas cap drive: 1200m x 1200m x 50m. Oil zone 30m thick, gas cap 20m. k=150mD, phi=22%. 2 producers in oil zone. 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 48,
+          "prompt": "Dry gas reservoir: 800m x 800m x 25m. High pressure 6000 psi. k=80mD, phi=18%. Gas Z-factor 0.85. Single producer, 20 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 49,
+          "prompt": "Solution gas drive: 1000m x 1000m x 20m. Undersaturated oil, bubble point 2500 psi. k=140mD, phi=21%. 3 producers, 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 50,
+          "prompt": "Gas injection for pressure maintenance: 1500m x 1500m x 35m. Oil reservoir with 4 producers, 2 gas injectors. k=160mD, 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 51,
+          "prompt": "Volatile oil reservoir: 1000m x 1000m x 28m. High GOR 1500 scf/bbl. Pressure 4500 psi. k=110mD, phi=19%. 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 52,
+          "prompt": "Retrograde condensate: 900m x 900m x 22m. Pressure starts above dewpoint 4800 psi. k=95mD, phi=17%. 2 producers, 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 53,
+          "prompt": "Gas storage project: 600m x 600m x 15m. Depleted gas reservoir. Cyclical injection/production. k=200mD, phi=24%. 5-year cycle.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 54,
+          "prompt": "Strong gas cap: 1200m x 1200m. Gas cap 25m, oil column 15m. k=130mD, phi=20%. Gas cap drive mechanism. 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 55,
+          "prompt": "Gas cycling: 1000m x 1000m x 30m. Gas condensate reservoir. Extract liquids, reinject dry gas. k=140mD, 20 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        }
+      ]
+    },
+    {
+      "name": "Advanced Recovery (EOR)",
+      "description": "Tertiary recovery scenarios",
+      "expected_pass_rate": 0.80,
+      "prompts": [
+        {
+          "id": 56,
+          "prompt": "Polymer flood: 800m x 800m x 18m after waterflood. 1 polymer injector, 2 producers. Polymer viscosity 10 cP. k=120mD, 8 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 57,
+          "prompt": "CO2 flood: 1500m x 1000m x 25m. Miscible CO2 injection. 3 injectors, 4 producers. Minimum miscibility pressure 2800 psi. 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 58,
+          "prompt": "Surfactant flood: 600m x 600m x 15m. Post-waterflood. 1 injector, 1 producer. Ultra-low IFT. k=100mD, phi=20%. 5 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 59,
+          "prompt": "Steam flood: 1000m x 1000m x 20m heavy oil reservoir. Oil viscosity 500 cP. Steam injection 300°F. k=2000mD (unconsolidated sand). 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 60,
+          "prompt": "WAG (Water-Alternating-Gas): 1200m x 1200m x 22m. CO2 and water cycles. 2 injectors, 3 producers. k=140mD, 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 61,
+          "prompt": "SAGD (Steam Assisted Gravity Drainage): 800m x 400m x 30m. Horizontal well pairs. Heavy oil 5000 cP. k=3000mD, 8 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 62,
+          "prompt": "Alkaline flood: 700m x 700m x 16m. Alkali-surfactant-polymer. 1 injector, 2 producers. k=110mD, phi=19%. 6 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 63,
+          "prompt": "Nitrogen flood: 1000m x 1000m x 28m. Immiscible nitrogen for pressure maintenance. 2 injectors, 3 producers. k=90mD, 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 64,
+          "prompt": "Thermal recovery: 900m x 900m x 25m. Cyclic steam stimulation. 4 wells. Heavy oil 1000 cP. k=1500mD, 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 65,
+          "prompt": "Micellar-polymer flood: 1100m x 1100m x 20m. After waterflood. Slug injection followed by polymer. k=130mD, 9 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        }
+      ]
+    },
+    {
+      "name": "Horizontal & Deviated Wells",
+      "description": "Well orientation complexity",
+      "expected_pass_rate": 0.85,
+      "prompts": [
+        {
+          "id": 66,
+          "prompt": "Horizontal producer: 1000m x 1000m x 15m thin reservoir. Single 500m horizontal well. k=120mD, phi=20%. 8 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 67,
+          "prompt": "Dual lateral well: 1200m x 1200m x 20m. One well with two 400m horizontal laterals. k=150mD, phi=22%. 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 68,
+          "prompt": "Multilateral wells: 1500m x 1500m x 25m. 3 wells, each with 3 horizontal branches. k=140mD, 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 69,
+          "prompt": "Horizontal injector and producer: 800m x 800m x 12m. One 600m horizontal injector, one 600m horizontal producer parallel. k=100mD, 7 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 70,
+          "prompt": "Deviated wells: 1000m x 1000m x 30m. 4 deviated wells, 60° from vertical. k=130mD, phi=21%. 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 71,
+          "prompt": "Fishbone well: 900m x 900m x 18m. 1 main horizontal with 6 short lateral branches. k=110mD, phi=19%. 9 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 72,
+          "prompt": "Horizontal well in gas cap: 1200m x 1200m x 40m. Oil zone 25m, gas cap 15m. Horizontal well at top of oil zone. k=160mD, 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 73,
+          "prompt": "Stacked horizontal wells: 1000m x 1000m x 50m. Two 700m horizontal wells in different layers. k varies 100-180mD. 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        },
+        {
+          "id": 74,
+          "prompt": "U-shaped well: 800m x 800m x 20m. Single well with U-turn at reservoir bottom. k=95mD, phi=18%. 8 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 75,
+          "prompt": "Horizontal injector above horizontal producer: 1500m x 1000m x 30m. Gravity drainage. k=200mD, phi=24%. 12 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases & Stress Tests",
+      "description": "Should challenge validators",
+      "expected_pass_rate": 0.80,
+      "prompts": [
+        {
+          "id": 76,
+          "prompt": "Extremely high permeability: 10,000 mD fractures. 500m x 500m x 10m. Porosity 5%. Single well, 2 years.",
+          "difficulty": "stress",
+          "expected_warning": "high_permeability"
+        },
+        {
+          "id": 77,
+          "prompt": "Very low permeability tight reservoir: 0.05 mD. 2000m x 2000m x 100m. Horizontal well. 30 years.",
+          "difficulty": "stress",
+          "expected_warning": "low_permeability"
+        },
+        {
+          "id": 78,
+          "prompt": "Ultra-high pressure: Initial 15,000 psi. 800m x 800m x 20m. Deep reservoir. k=80mD, 15 years.",
+          "difficulty": "stress",
+          "expected_warning": "high_pressure"
+        },
+        {
+          "id": 79,
+          "prompt": "Extremely heterogeneous: Permeability varies 0.1 to 5000 mD. 1000m x 1000m x 30m. 10 years.",
+          "difficulty": "stress",
+          "expected_warning": "wide_range"
+        },
+        {
+          "id": 80,
+          "prompt": "Heavy oil, high viscosity: 10,000 cP. 600m x 600m x 25m. k=5000mD unconsolidated. Cold production, 8 years.",
+          "difficulty": "stress",
+          "expected_warning": "high_viscosity"
+        },
+        {
+          "id": 81,
+          "prompt": "Tiny reservoir: 50m x 50m x 5m. Single well test. k=100mD, phi=20%. 6 months simulation.",
+          "difficulty": "stress",
+          "expected_warning": "small_grid"
+        },
+        {
+          "id": 82,
+          "prompt": "Huge reservoir: 10km x 10km x 100m. 20 producers, 10 injectors. k=150mD, 30 years.",
+          "difficulty": "stress",
+          "expected_warning": "large_grid"
+        },
+        {
+          "id": 83,
+          "prompt": "Very thin pay: 1000m x 1000m x 2m. k=200mD, phi=25%. Horizontal well required. 5 years.",
+          "difficulty": "stress",
+          "expected_warning": "thin_layer"
+        },
+        {
+          "id": 84,
+          "prompt": "Nearly depleted: Initial pressure 500 psi. 800m x 800m x 15m. Waterflood. k=120mD, 10 years.",
+          "difficulty": "stress",
+          "expected_warning": "low_pressure"
+        },
+        {
+          "id": 85,
+          "prompt": "Overpressured: Initial 8000 psi at 2000m depth. 1000m x 1000m x 20m. k=100mD, 12 years.",
+          "difficulty": "stress",
+          "expected_warning": "abnormal_pressure"
+        },
+        {
+          "id": 86,
+          "prompt": "Single cell test: 10m x 10m x 10m. Just testing PVT model. 1 year.",
+          "difficulty": "stress",
+          "expected_warning": "minimal_grid"
+        },
+        {
+          "id": 87,
+          "prompt": "Anisotropic permeability: kx=200mD, ky=150mD, kz=20mD. 1000m x 1000m x 25m. 10 years.",
+          "difficulty": "medium",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 88,
+          "prompt": "Zero porosity barriers: 1200m x 1200m x 20m. Fault zones with phi=0%. k=140mD in reservoir. 15 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 89,
+          "prompt": "Temperature-dependent properties: 1000m x 1000m x 30m. Thermal simulation. Viscosity varies with temp. 10 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "moderate"
+        },
+        {
+          "id": 90,
+          "prompt": "Compacting reservoir: 1500m x 1500m x 40m. Rock compressibility 1e-5 psi⁻¹. Subsidence. k=110mD, 20 years.",
+          "difficulty": "hard",
+          "expected_grid_size": "large"
+        }
+      ]
+    },
+    {
+      "name": "Vague/Ambiguous Prompts",
+      "description": "Should ask for clarification or make reasonable assumptions",
+      "expected_pass_rate": 0.90,
+      "prompts": [
+        {
+          "id": 91,
+          "prompt": "Simple waterflood model. Run for a while.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "request_clarification"
+        },
+        {
+          "id": 92,
+          "prompt": "I need to model a reservoir.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "request_clarification"
+        },
+        {
+          "id": 93,
+          "prompt": "5-spot pattern with typical Niger Delta properties.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "make_assumptions_with_documentation"
+        },
+        {
+          "id": 94,
+          "prompt": "Horizontal well in a tight formation.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "request_clarification"
+        },
+        {
+          "id": 95,
+          "prompt": "Gas reservoir, make it realistic.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "request_clarification"
+        },
+        {
+          "id": 96,
+          "prompt": "Copy the setup from the Smith et al. 2020 SPE paper.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "decline_external_reference"
+        },
+        {
+          "id": 97,
+          "prompt": "Same as last time but with higher injection rate.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "decline_no_context"
+        },
+        {
+          "id": 98,
+          "prompt": "Standard black oil model.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "request_clarification"
+        },
+        {
+          "id": 99,
+          "prompt": "Heavy oil project, you know what I mean.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "request_clarification"
+        },
+        {
+          "id": 100,
+          "prompt": "Quick sensitivity study on permeability.",
+          "difficulty": "ambiguous",
+          "expected_behavior": "request_clarification"
+        }
+      ]
+    }
+  ]
+}

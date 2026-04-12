@@ -1,0 +1,64 @@
+{
+  "field_analogues": [
+    {
+      "name": "Equinor Volve Field",
+      "location": "North Sea, Norway",
+      "geology": "Hugin Formation; Middle Jurassic sandstone; heavily faulted.",
+      "pvt": "32-35 API; Saturation pressure 210-240 bar; GOR 75-100 sm3/sm3.",
+      "drive_mechanism": "Water injection and natural water drive.",
+      "tech_specs": "Perm 500-2000mD; Porosity 20-25%; 3200m depth.",
+      "source_url": "https://www.equinor.com/energy/volve-data-sharing",
+      "description": "A complete field dataset including production, seismic, and well logs."
+    },
+    {
+      "name": "SPE 9 Comparative Solution",
+      "location": "Benchmark Synthetic",
+      "geology": "Dipping three-layer reservoir with cross-flow.",
+      "pvt": "Slightly compressible black oil; Saturated with gas cap.",
+      "drive_mechanism": "Waterflood with significant gravity effects.",
+      "tech_specs": "Grid 24x25x15 (9,000 cells); Non-neighbor connections.",
+      "source_url": "https://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/ECLIPSE_DATA/",
+      "description": "The industry standard for testing black-oil simulator performance."
+    },
+    {
+      "name": "Norne Field (Benchmark)",
+      "location": "Norwegian Sea",
+      "geology": "Ile and Tofte Formations; Sandstone with complex faulting.",
+      "pvt": "Standard Black Oil; High quality production history.",
+      "drive_mechanism": "Combined gas and water injection.",
+      "tech_specs": "44,431 active cells; 22 production wells; 46,000 days history.",
+      "source_url": "https://www.ntnu.edu/web/norne-benchmark",
+      "description": "Widely used for history matching and optimization research."
+    },
+    {
+      "name": "Brugge Field",
+      "location": "North Sea (Synthetic)",
+      "geology": "Multi-layered (4 formations) with complex internal faulting.",
+      "pvt": "Variable oil viscosity across layers.",
+      "drive_mechanism": "Active waterflood optimization.",
+      "tech_specs": "60,000 cells; 20 producers; 10 water injectors.",
+      "source_url": "https://link.springer.com/article/10.1007/s10596-014-9413-4",
+      "description": "Designed by TNO to test history matching and waterflooding strategies."
+    },
+    {
+      "name": "SPE 10 (Model 2)",
+      "location": "Benchmark Synthetic",
+      "geology": "Fluvial deltaic (Upper Brent) and channelized (Lower Brent) sections.",
+      "pvt": "Dead oil / Simple Black Oil.",
+      "drive_mechanism": "Incompressible waterflood.",
+      "tech_specs": "1.1 million cells; Highly heterogeneous; High perm channels.",
+      "source_url": "https://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/ECLIPSE_DATA/",
+      "description": "The ultimate test for upscaling and fine-grid solver performance."
+    },
+    {
+      "name": "Gullfaks Field",
+      "location": "North Sea, Norway",
+      "geology": "Brent Group; Complex structural traps; Multiple fault blocks.",
+      "pvt": "Varying oil quality; 28-36 API.",
+      "drive_mechanism": "Water and Gas injection.",
+      "tech_specs": "Large scale; 100+ wells; High structural complexity.",
+      "source_url": "https://www.equinor.com/energy/gullfaks-data-sharing",
+      "description": "Rich dataset for structural modeling and EOR studies."
+    }
+  ]
+}

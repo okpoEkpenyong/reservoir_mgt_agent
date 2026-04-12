@@ -11,6 +11,8 @@ import io
 import datetime
 import sys
 import os
+import json
+import logging
 
 
 
@@ -26,6 +28,38 @@ class ReservoirAgent:
         }
         # Governance settings
         self.privacy_mode = "ZERO_RETENTION" # Enforced via Azure Policy
+        
+        # 1. Get the directory where THIS file (reservoir_agent.py) lives:
+        # This will be: .../reservoir_mgt_agent/agent/
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # 2. Define Absolute Paths pointing to the 'data' subfolder inside 'agent'
+        path_analogues = os.path.join(current_dir, 'data', 'field_library.json')
+        path_benchmarks = os.path.join(current_dir, 'data', 'benchmarking_suite.json')
+        path_adversarial = os.path.join(current_dir, 'data', 'adversarial_suite.json')
+
+        # 3. Load the data
+        self.analogues = self._load_json(path_analogues).get('field_analogues', [])
+        self.benchmarks = self._load_json(path_benchmarks).get('categories', [])
+        self.adversarial = self._load_json(path_adversarial).get('categories', [])
+        
+        # Debugging prints for your terminal
+        #print(f"DEBUG: Found data folder at: {os.path.join(current_dir, 'data')}")
+        #print(f"DEBUG: Loaded {len(self.analogues)} Analogues")
+        #print(f"DEBUG: Loaded {len(self.benchmarks)} Benchmarks")
+        #print(f"DEBUG: Loaded {len(self.adversarial)} Adversarial cases")
+
+    def _load_json(self, path):
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            else:
+                logging.log(logging.INFO,f"ERROR: File not found at {path}")
+        except Exception as e:
+            logging.log(logging.INFO,f"ERROR: Could not parse JSON at {path}: {str(e)}")
+        return {}
+    
         
     def _enforce_privacy_scrub(self, text):
         """Redacts potentially sensitive metadata before processing if needed."""
@@ -56,7 +90,7 @@ class ReservoirAgent:
         if date_col:
             df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
             df = df.dropna(subset=[date_col])
-            report.append(f"✅ Standardized date format in column '{date_col}'")
+            report.append(f"Standardized date format in column '{date_col}'")
 
         # Handle Missing Values (Interpolation for engineering continuity)
         if df.isnull().values.any():
@@ -153,6 +187,63 @@ class ReservoirAgent:
             return f"Comparison against {model_name} standard: Validating STOIIP and Grid Topology..."
         return "Unknown benchmark model."
 
+    def get_analogue_data(self, name):
+        library = self._load_json('data/field_library.json')
+        return next((f for f in library['field_analogues'] if f['name'] == name), None)
+
+        def generate_simulation_deck_with_analogue(self, analogue_name, specific_reqs, model_choice):
+            analogue = self.get_analogue_data(analogue_name)
+            
+            system_prompt = f"""You are a Senior Reservoir Consultant. 
+            You are architecting a model BASED ON the real-world {analogue['name']}.
+            
+            ANALOGUE GEOLOGY: {analogue['geology']}
+            TYPICAL PVT: {analogue['pvt']}
+            PHYSICS CONTEXT: {analogue['tech_specs']}
+            
+            Requirement: {specific_reqs}
+            
+            Your output must be a valid ECLIPSE (.DATA) file that respects the physical constraints of the {analogue_name} analogue."""
+
+            return self.engine.analyze_reservoir_task(model_choice, system_prompt, specific_reqs)
+    
+
+    def generate_with_context(self, prompt, model_choice, context_data=None):
+        """
+        Unified generation point for ALL scenarios.
+        context_data can be Analogue metadata or Test Case metadata.
+        """
+        # 1. Safety Filter (Inbound)
+        is_safe, msg = self.shield.analyze_text_safety(prompt)
+        if not is_safe:
+            return self._format_error(f"Azure Safety Flag: {msg}")
+
+        # 2. Context Injection
+        system_msg = "You are ExzingReservoirAgent, a Senior Reservoir Simulation Expert."
+        if context_data:
+            if 'source_url' in context_data: # It's an Analogue
+                system_msg += f"\nANALOGUE CONTEXT: Model this based on {context_data['name']} ({context_data['source_url']})."
+            elif 'expected_behavior' in context_data: # It's an Adversarial test
+                system_msg += f"\nSAFETY MODE: User is testing boundaries. Strictly follow: {context_data['expected_behavior']}."
+
+        # 3. Execution
+        raw_output = self.engine.analyze_reservoir_task(model_choice, system_msg, prompt)
+        
+        # 4. Physics Scoring (Outbound)
+        # We reuse our existing calculate_safety_score logic
+        #from .reservoir_agent_logic import calculate_safety_score # Assuming helper is here
+        score, warnings = self.calculate_safety_score(raw_output, prompt)
+        
+        return {
+            "deck": raw_output,
+            "safety_score": score,
+            "warnings": warnings,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+    def _format_error(self, message):
+        return {"deck": "BLOCK", "safety_score": 0, "warnings": [message], "timestamp": "N/A"}
+    
     def generate_simulation_deck(self, user_requirements, model_choice):
         # 1. ACTUAL AZURE CONTENT SAFETY CHECK (Inbound)
         is_safe, message = self.shield.analyze_text_safety(user_requirements)

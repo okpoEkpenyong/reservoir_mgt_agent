@@ -1,7 +1,4 @@
-﻿#from .llm import LLMEngine
-#from .safety_shield import AzureSafetyShield
-
-from agent.llm import LLMEngine
+﻿from agent.llm import LLMEngine
 from agent.safety_shields import AzureSafetyShield
 
 import re
@@ -60,7 +57,6 @@ class ReservoirAgent:
             logging.log(logging.INFO,f"ERROR: Could not parse JSON at {path}: {str(e)}")
         return {}
     
-        
     def _enforce_privacy_scrub(self, text):
         """Redacts potentially sensitive metadata before processing if needed."""
         # Simple example: Redact specific project names if they match a pattern
@@ -109,15 +105,69 @@ class ReservoirAgent:
         report.append(f"📊 Processed {len(df)} rows (Type: {data_type}).")
         return data_type, df, "\n".join(report)
 
-    def generate_diagnostic_report(self, deck_content, model_choice):
-        system_prompt = "You are a Senior Reservoir Simulation Expert performing a QC on an ECLIPSE/OPM deck."
-        user_content = f"Analyze this deck snippet:\n\n{deck_content}"
-        return self.engine.analyze_reservoir_task(model_choice, system_prompt, user_content)
+    def is_input_technically_sound(self, user_req):
+        """Checks if the prompt contains enough technical context to build a model."""
+        # 1. Length Check
+        if len(user_req.strip()) < 15:
+            return False, "Input is too short. Please provide a more detailed reservoir description."
 
+        # 2. Technical Anchor Check
+        # Does the prompt contain at least one key technical concept?
+        anchors = ['grid', 'field', 'volve', 'norne', 'spe', 'waterflood', 'injection', 
+                   'porosity', 'permeability', 'perm', 'md', 'api', 'pressure', 'well', 'spot']
+        
+        has_anchor = any(anchor in user_req.lower() for anchor in anchors)
+        if not has_anchor:
+            return False, "Input lacks technical context. Please include parameters like dimensions, properties, or specific field analogues."
+
+        return True, "Success"
+    
+    def generate_diagnostic_report(self, deck_content, model_choice):
+        system_prompt = """You are a Senior Reservoir Simulation Expert performing a QC on an ECLIPSE/OPM deck.
+        GOVERNANCE: You cannot bypass safety limits. Use Azure AI Content Safety protocols.
+        PRIVACY NOTICE: This session is under Zero Data Retention. 
+        STRICT REQUIREMENT: user input must first satisify the condition and format for a .DATA deck
+        """
+        reasons = []
+        user_content = f"Analyze this deck snippet:\n\n{deck_content}"
+        
+        is_safe, message = self.shield.analyze_text_safety(user_content)
+        
+        if not is_safe:
+            return {
+                "deck": "BLOCK: Input violated Azure AI Content Safety protocols.",
+                "safety_score": 0,
+                "warnings": [message],
+                "timestamp": "N/A"
+            }
+        
+
+        raw_deck = self.engine.analyze_reservoir_task(model_choice, system_prompt, user_content)
+        
+        # HITL Hook: Calculate score before returning to UI
+        safety_score, warnings = self.calculate_safety_score(raw_deck, user_content)
+        
+        return {
+            "deck": raw_deck,
+            "safety_score": safety_score,
+            "warnings": warnings,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }                
+              
     def analyze_reservoir_data(self, df, user_query, model_choice):
         df_info = df.describe().to_string()
         system_prompt = "You are a Reservoir Data Analyst. Answer technical questions based on this data context."
         user_content = f"DATA CONTEXT:\n{df_info}\n\nUSER QUESTION: {user_query}"
+        
+        is_safe, message = self.shield.analyze_text_safety(user_content)
+        
+        if not is_safe:
+            return {
+                "deck": "BLOCK: Input violated Azure AI Content Safety protocols.",
+                "safety_score": 0,
+                "warnings": [message],
+                "timestamp": "N/A"
+            }
         return self.engine.analyze_reservoir_task(model_choice, system_prompt, user_content)
         
     def generate_executive_summary(self, content, context_type, model_choice):
@@ -126,7 +176,6 @@ class ReservoirAgent:
         user_content = f"Here is the data:\n\n{content}"
         return self.engine.analyze_reservoir_task(model_choice, system_prompt, user_content)
         
-    
     def _validate_deck_syntax(self, deck_content):
         """Checks if generated deck contains essential ECLIPSE keywords."""
         found = [kw for kw in self.valid_keywords if kw in deck_content.upper()]
@@ -147,6 +196,7 @@ class ReservoirAgent:
             warnings.append("⚠️ PHYSICAL IMPOSSIBILITY: Porosity > 45% is geologically unrealistic.")
             
         return warnings    
+    
     
     def calculate_safety_score(self, deck_content, user_req):
         """Multi-factor safety and realism scoring."""
@@ -230,8 +280,6 @@ class ReservoirAgent:
         raw_output = self.engine.analyze_reservoir_task(model_choice, system_msg, prompt)
         
         # 4. Physics Scoring (Outbound)
-        # We reuse our existing calculate_safety_score logic
-        #from .reservoir_agent_logic import calculate_safety_score # Assuming helper is here
         score, warnings = self.calculate_safety_score(raw_output, prompt)
         
         return {
@@ -244,7 +292,7 @@ class ReservoirAgent:
     def _format_error(self, message):
         return {"deck": "BLOCK", "safety_score": 0, "warnings": [message], "timestamp": "N/A"}
     
-    def generate_simulation_deck(self, user_requirements, model_choice):
+    def generate_simulation_deck(self, user_requirements, model_choice, has_includes=False):
         # 1. ACTUAL AZURE CONTENT SAFETY CHECK (Inbound)
         is_safe, message = self.shield.analyze_text_safety(user_requirements)
         
@@ -255,13 +303,29 @@ class ReservoirAgent:
                 "warnings": [message],
                 "timestamp": "N/A"
             }
+            
+        include_logic = ""
+        if has_includes:
+            include_logic = """
+            PROFESSIONAL MODE: The user has existing static models. 
+            Do NOT generate the GRID or PROPS cell data. 
+            Instead, use keywords that reference those INCLUDE files to be imported.
+            """
+
 
         # 2. PROCEED TO GENERATION
-        system_prompt = """You are a Reservoir Simulation Expert. Generate an ECLIPSE .DATA file.
+        system_prompt = f"""You are a Reservoir Simulation Expert. Generate an ECLIPSE .DATA file.
         GOVERNANCE: You cannot bypass safety limits. Use Azure AI Content Safety protocols.
         PRIVACY NOTICE: This session is under Zero Data Retention. 
+        COMPLETNESS: problem description should not be vague but sensible and full description of an oil/gas field or reservoir system.
+        STRICT REQUIREMENT: If the user requirements are technically incomplete, contradictory, or nonsensical, 
+        do NOT generate a deck. Instead, explain exactly what technical parameters are missing.
+        if {include_logic}:
+        Generate a professional ECLIPSE Master Deck. Also observe governance, privacy and completeness.
+        Ensure well control logic is robust and references the correct cell indices.
         Do not store or reference this technical IP in any global training corpus.
-        Process the following requirements strictly in-memory."""
+        Process the following requirements strictly in-memory.
+        """
         
         raw_deck = self.engine.analyze_reservoir_task(model_choice, system_prompt, user_requirements)
         

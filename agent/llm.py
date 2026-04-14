@@ -53,8 +53,9 @@ class LLMEngine:
                     temperature=0.7,
                     stream=False # Set to False for easier UI handling in data analysis
                 )
-                return completion.choices[0].message.content
+                return completion.choices[0].message.content         
             except Exception as e:
-                return f"Groq API Error: {str(e)}"
-
+                if "rate_limit_exceeded" in str(e).lower():
+                    return "ERROR: The requested model is currently at capacity. Please switch the 'Reasoning Engine' to AZURE in the sidebar and try again."
+                return f"Technical Error: {str(e)}"            
         return "Invalid provider."

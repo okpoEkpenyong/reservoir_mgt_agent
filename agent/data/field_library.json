@@ -1,5 +1,15 @@
 {
   "field_analogues": [
+	  {
+	  "name": "Ada Main Field (Names modified for copyright protection)",
+	  "location": "Nigeria/Cameroon Straddle",
+	  "geology": "Stacked Sands (A4/A5.1/A5.2/A6); Shoreface prograding environment; Faulted.",
+	  "pvt": "Saturated Black Oil; Primary Gas Cap; 23kbopd peak history.",
+	  "drive_mechanism": "Gas cap drive; Weak-to-moderate aquifer; Water injection support.",
+	  "tech_specs": "ECLIPSE 100; 22 Wells (Vertical/Deviated/Horizontal); 50mx50mx2ft Fine Grid.",
+	  "source_url": "Internal Field Review Data",
+	  "description": "Complex stacked reservoir requiring history matching across 3 producing units and 22 well penetrations."
+	},
     {
       "name": "Equinor Volve Field",
       "location": "North Sea, Norway",

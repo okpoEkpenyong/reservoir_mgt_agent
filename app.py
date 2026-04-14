@@ -51,6 +51,14 @@ if 'agent' not in st.session_state:
 # Persistent Audit Log (In Session State, pointing toward SQL)
 if 'audit_trail' not in st.session_state:
     st.session_state.audit_trail = []
+
+
+# This will be: .../reservoir_mgt_agent/app.py/
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 2. Define Absolute Paths pointing to the 'data' subfolder inside 'agent'
+path_logo = os.path.join(current_dir, 'assets', 'favicon.PNG')
+st.set_page_config(page_title="Exzing Reservoir Agent", page_icon=path_logo, layout="wide")    
     
 
 # --- INDUSTRIAL UI ENHANCEMENTS ---
@@ -160,36 +168,151 @@ with st.expander("🛡️ Security & Privacy Compliance Information"):
     """)
 
 
+# Custom CSS to hide the deploy button
+st.markdown(
+    """
+    <style>
+    .stAppDeployButton {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 with st.sidebar:
     st.header("Data Ingestion")
     uploaded_file = st.file_uploader("Upload Subsurface Data (CSV/XLSX)", type=["csv", "xlsx"])
     llm_choice = st.selectbox("Reasoning Engine:", ["GROQ", "AZURE"], help="AZURE: High-compliance GPT-5-main. GROQ: openai/gpt-oss-120b High-speed technical reasoning.")
     st.info("Models are secured with Azure Key Vault.")
+    st.sidebar.markdown("---")
+    st.sidebar.caption("🛡️ **Governance Status:** AI Content Safety Active")
+    st.sidebar.caption("© 2026 Exzing Technology Ltd")     
+    st.image(path_logo, use_container_width=False)
+    st.markdown("<br>", unsafe_allow_html=True) # Add some spacing
+    
+    with st.expander("User Guide"):
+        st.info(
+        """
+       
+        ## 1. Getting Started
+        To access the agent, you must first subscribe via the **Azure Marketplace**.
+        1.  Search for "Exzing Reservoir Management" in the Azure Portal.
+        2.  Purchase a **Standard Plan**.
+        3.  Click **Configure Account** to reach the Exzing Portal.
+        4.  Click **Launch Reservoir Agent** to enter your workspace.
+
+        ## 2. Generating Simulation Decks (Field Architect)
+        The Field Architect converts your technical descriptions into simulator code.
+        *   **Simple Mode:** Describe a reservoir (e.g., "5-spot waterflood, 20x20x5 grid, 100mD perm"). The agent will generate a complete synthetic deck.
+        *   **Professional Mode:** Toggle "Use External INCLUDE files." Use this if you have an existing static model. The agent will only generate the Master Deck logic (RUNSPEC, SOLUTION, SCHEDULE).
+
+        ## 3. Auditing Data (Asset Intelligence)
+        Upload a CSV or Excel file containing production history.
+        *   The agent will automatically detect the **Data Type**.
+        *   It will check for **Outliers** (sensor failures) and **Missing Dates**.
+        *   Click **Download Fixed Dataset** to get a cleaned version ready for material balance or simulation.
+
+        ## 4. The Validation Lab
+        Use Tab 3 to stress-test your assumptions:
+        *   **Benchmarking:** Compare your field properties against industry "Gold Standards" like the **Volve Field** or **SPE 9**.
+        *   **Safety Check:** Review the "Physics Safety Score." If the score is below 70%, the agent will provide technical warnings (e.g., "Injection rate exceeds fracture pressure").
+
+        ## 5. Support & Feedback
+        For technical assistance or to request a custom field analogue integration, please contact **okpo.ekpenyong@gmail.com, info@exzing.com**.
+        """)
 
 tabs = st.tabs(["DECK ANALYSIS", "DECK GENERATOR", "RESERVOIR TOOLS", "INSIGHTS", "AUDIT & GOVERNANCE"])
 
 # --- TAB 0: DECK ANALYSIS ---
 with tabs[0]:
-    st.markdown("### ECLIPSE/OPM Deck Diagnostic")
-    deck_input = st.text_area("Paste .DATA file content here:", height=300, placeholder="RUNSPEC\nDIMENS\n10 10 3 / ...")    
+    st.markdown("### 🔍 ECLIPSE/OPM Deck Diagnostic")
+    st.caption("🔒 Enterprise Governance: Analysis performed in-memory with Zero-Retention.")
     
-    if st.button("Generate AI Operational Diagnostic Report"):
+    deck_input = st.text_area(
+        "Paste .DATA file content here (max 5,000 lines):", 
+        height=300, 
+        placeholder="RUNSPEC\nDIMENS\n10 10 3 / ...",
+        help="Pleae paste only header relevant sections of your deck for a technical audit."
+    )    
+    
+    # --- TOKEN LIMIT SAFEGUARD ---
+    # Heuristic: 1 word ~ 1.3 tokens. 
+    # If input is too large, warn the user before they waste an API call.
+    approx_tokens = len(deck_input.split()) * 1.3
+    if approx_tokens > 8000:
+        st.warning(f"⚠️ Input is too large (~{approx_tokens:.0f} tokens). Please paste only the RUNSPEC, GRID, and PROPS sections to avoid model timeouts.")
+    
+    if st.button("Generate AI Operational Diagnostic Report", key="run_diagnostic"):
         if deck_input:
-            with st.spinner(f"Agent is analyzing via {llm_choice}..."):
+            with st.spinner(f"ExzingReservoirAgent is auditing deck via {llm_choice}..."):
+                # 1. Generate Report (Returns the dictionary we defined earlier)
                 report = st.session_state.agent.generate_diagnostic_report(deck_input, llm_choice)
-                st.success("Diagnostic Report Generated")
-                st.markdown(f"--- \n {report}")
-
-            st.success(f"Done!")  
+                
+                # 2. Save to Session State to keep it visible
+                st.session_state.last_diagnostic = report
+                
+                # 3. Log to Audit Trail
+                st.session_state.audit_trail.append({
+                    "Timestamp": report.get('timestamp', 'N/A'),
+                    "Action": "Deck Diagnostic",
+                    "Safety_Score": report.get('safety_score', 0),
+                    "Provider": llm_choice
+                })
         else:
             st.warning("Please provide deck content to analyze.")
+
+    # --- RESULTS DISPLAY LOGIC (Reactive) ---
+    if 'last_diagnostic' in st.session_state:
+        res = st.session_state.last_diagnostic
+        
+        # Guard against API Errors (If 'deck' contains an error message)
+        if "API Error" in res['deck'] or "Limit" in res['deck']:
+            st.error("🚨 Reasoning Engine Capacity Reached")
+            st.info(res['deck']) # Show the error message clearly
+            if st.button("Clear Error"):
+                del st.session_state.last_diagnostic
+                st.rerun()
+        else:
+            st.divider()
+            # 1. Metrics Header
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Diagnostic Integrity", f"{res.get('safety_score', 0)}%")
+            c2.metric("Status", "Audit Complete")
+            c3.metric("Model", llm_choice)
+
+            # 2. Show Technical Warnings
+            if res.get('warnings'):
+                for w in res['warnings']:
+                    st.warning(w)
+
+            # 3. Show the Report/Deck Content
+            st.markdown("### 📋 AI Operational Diagnostic Report")
+            st.markdown(res['deck']) # Diagnostics are usually markdown reports
+
+            # 4. Human-in-the-Loop (HITL) Validation
+            st.info("💡 **HITL Required:** A certified engineer must verify these anomalies before taking operational action.")
+            
+            reviewed = st.checkbox("I acknowledge the diagnostic findings and accept responsibility for model changes.", key="diag_hitl")
+            
+            if reviewed:
+                st.download_button(
+                    label="💾 Export Diagnostic Report (.TXT)",
+                    data=res['deck'],
+                    file_name=f"Exzing_Diagnostic_{datetime.now().strftime('%Y%m%d')}.txt",
+                    mime="text/plain"
+                )
 
 # --- TAB 1: DECK GENERATOR ---
 with tabs[1]:
     st.markdown("### Agentic Deck Generator (ExzingReservoirAgent)")
     st.caption("🔒 Enterprise Governance: Azure AI Content Safety & Zero-Retention active.")
     st.info("Describe your reservoir model in plain English (e.g., 'Model a 5-spot waterflood...').")
+    
+    # The Toggle creates the 'has_includes' boolean
+    workflow_mode = st.toggle("Professional Workflow (Use External INCLUDE files)", 
+                              help="Enable this to generate a Master Deck that references your existing GRID and PROPS .INC files.")
     
     # Text input for the natural language problem
     user_prompt = st.text_area("Problem Description:", height=150, 
@@ -203,12 +326,11 @@ with tabs[1]:
         elif user_prompt:
             with st.spinner("ExzingReservoirAgent: Analyzing physics and generating deck..."):
                 # 1. Generate the Deck
-                result = st.session_state.agent.generate_simulation_deck(user_prompt, llm_choice)
-                #st.session_state.current_deck = generated_deck # Store in session state
+                result = st.session_state.agent.generate_simulation_deck(user_prompt, llm_choice, has_includes=workflow_mode)
                 st.session_state.last_result = result
                 
                 st.success("Generated ECLIPSE Deck")
-                st.code(result, language="plaintext")
+                #st.code(result, language="plaintext")
                 
                 # 2. LOG TO DYNAMIC AUDIT TRAIL
                 st.session_state.audit_trail.append({
@@ -218,13 +340,6 @@ with tabs[1]:
                     "Provider": llm_choice
                 })
                 
-                # 2. Add Export Button
-                #st.download_button(
-                #    label="💾 Export .DATA File",
-                #    data=result,
-                #    file_name="exzing_model.DATA",
-                #    mime="text/plain"
-                #)
         else:
             st.warning("Please describe your model requirements.")    
 
@@ -266,7 +381,6 @@ with tabs[1]:
             st.error("🚫 Export Disabled: The generated content failed safety or engineering validation.")
             
             
-
 # --- TAB 2: RESERVOIR TOOLS (AI ADVISOR) ---
 with tabs[2]:
     st.subheader("Engineering Data Workspace")
@@ -476,7 +590,7 @@ with tabs[4]:
     # UNIFIED EXECUTION BUTTON
     if st.button("Run Architect Engine", key="run_engine_btn"):
         if final_prompt:
-            with st.spinner("ExReservoirGPT is processing field physics..."):
+            with st.spinner("ExzingReservoirAgent is processing field physics..."):
                 # 1. Generate the result
                 result = st.session_state.agent.generate_with_context(final_prompt, llm_choice, selected_context)
                 
@@ -573,6 +687,4 @@ st.markdown(
 )
 
 # Also added to the sidebar for constant visibility
-st.sidebar.markdown("---")
-st.sidebar.caption("🛡️ **Governance Status:** AI Content Safety Active")
-st.sidebar.caption("© 2026 Exzing Technology Ltd")        
+   

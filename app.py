@@ -57,7 +57,7 @@ if 'audit_trail' not in st.session_state:
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 2. Define Absolute Paths pointing to the 'data' subfolder inside 'agent'
-path_logo = os.path.join(current_dir, 'assets', 'favicon.PNG')
+path_logo = os.path.join(current_dir, 'assets', 'favicon.png')
 st.set_page_config(page_title="Exzing Reservoir Agent", page_icon=path_logo, layout="wide")    
     
 

@@ -8,10 +8,6 @@ python-dotenv
 huggingface_hub
 azure-ai-contentsafety
 azure-core
-transformer_lens
-torch
-inspect_ai
-sentence_transformers
 streamlit-option-menu
 streamlit_shadcn_ui
 matplotlib

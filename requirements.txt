@@ -11,3 +11,4 @@ azure-core
 streamlit-option-menu
 streamlit_shadcn_ui
 matplotlib
+scipy

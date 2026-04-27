@@ -1,6 +1,6 @@
 ﻿from agent.llm import LLMEngine
 from agent.safety_shields import AzureSafetyShield
-
+from agent.keyword_query import KeywordDB
 import re
 import pandas as pd
 import numpy as np
@@ -10,7 +10,6 @@ import sys
 import os
 import json
 import logging
-
 
 
 class ReservoirAgent:
@@ -26,9 +25,15 @@ class ReservoirAgent:
         # Governance settings
         self.privacy_mode = "ZERO_RETENTION" # Enforced via Azure Policy
         
-        # 1. Get the directory where THIS file (reservoir_agent.py) lives:
-        # This will be: .../reservoir_mgt_agent/agent/
+        # Path Management
         current_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(current_dir, 'data')
+        
+        # Load Databases
+        self.kw_db = KeywordDB(os.path.join(data_dir, 'reservoir_keywords_db_v3.json'))
+        self.analogues = self._load_json(os.path.join(data_dir, 'field_library.json')).get('field_analogues', [])
+        self.benchmarks = self._load_json(os.path.join(data_dir, 'benchmarking_suite.json')).get('categories', [])
+        self.adversarial = self._load_json(os.path.join(data_dir, 'adversarial_suite.json')).get('categories', [])
         
         # 2. Define Absolute Paths pointing to the 'data' subfolder inside 'agent'
         path_analogues = os.path.join(current_dir, 'data', 'field_library.json')
@@ -40,12 +45,6 @@ class ReservoirAgent:
         self.benchmarks = self._load_json(path_benchmarks).get('categories', [])
         self.adversarial = self._load_json(path_adversarial).get('categories', [])
         
-        # Debugging prints for your terminal
-        #print(f"DEBUG: Found data folder at: {os.path.join(current_dir, 'data')}")
-        #print(f"DEBUG: Loaded {len(self.analogues)} Analogues")
-        #print(f"DEBUG: Loaded {len(self.benchmarks)} Benchmarks")
-        #print(f"DEBUG: Loaded {len(self.adversarial)} Adversarial cases")
-
     def _load_json(self, path):
         try:
             if os.path.exists(path):
@@ -56,6 +55,19 @@ class ReservoirAgent:
         except Exception as e:
             logging.log(logging.INFO,f"ERROR: Could not parse JSON at {path}: {str(e)}")
         return {}
+        
+    
+
+    def verify_and_augment(self, ai_output):
+        found_keywords = re.findall(r"\b[A-Z]{4,8}\b", ai_output)
+        validations = []
+        for kw in list(set(found_keywords)):
+            if self.kw_db.exists(kw):
+                sup = self.kw_db.check_opm_support(kw)
+                if "❌" in sup['status']: validations.append(f"⚠️ {kw}: Not in OPM.")
+            else:
+                validations.append(f"❌ {kw}: Not a recognized keyword.")
+        return validations    
     
     def _enforce_privacy_scrub(self, text):
         """Redacts potentially sensitive metadata before processing if needed."""
@@ -121,43 +133,140 @@ class ReservoirAgent:
             return False, "Input lacks technical context. Please include parameters like dimensions, properties, or specific field analogues."
 
         return True, "Success"
+        
     
-    def generate_diagnostic_report(self, deck_content, model_choice):
-        system_prompt = """You are a Senior Reservoir Simulation Expert performing a QC on an ECLIPSE/OPM deck.
-        GOVERNANCE: You cannot bypass safety limits. Use Azure AI Content Safety protocols.
-        PRIVACY NOTICE: This session is under Zero Data Retention. 
-        STRICT REQUIREMENT: user input must first satisify the condition and format for a .DATA deck
+    def _get_technical_context(self, user_req):
+        """Scans the user request and pulls relevant ground-truth from the JSON."""
+        context_snippets = []
+        
+        # Mapping common terms to sections
+        topic_map = {
+            "well": "SCHEDULE",
+            "grid": "GRID",
+            "pvt": "PROPS",
+            "fluid": "PROPS",
+            "initial": "SOLUTION"
+        }
+
+        for term, section in topic_map.items():
+            if term in user_req.lower():
+                # Pull all valid keywords for that section from the JSON index
+                valid_kws = self.kw_db.by_section(section)
+                context_snippets.append(f"Valid keywords for {section} include: {', '.join(valid_kws[:15])}")
+        
+        return "\n".join(context_snippets)     
+    
+    import datetime
+    
+    def generate_diagnostic_report(self, deck_content: str, model_choice: str, error_log: str = None) -> dict:
         """
-        reasons = []
-        user_content = f"Analyze this deck snippet:\n\n{deck_content}"
-        
+        Generate a diagnostic report for a reservoir simulation deck.
+
+        Args:
+            deck_content: The .DATA deck snippet to analyze.
+            model_choice: The LLM model identifier to use.
+            error_log: Optional simulator error log (triggers debugging mode if provided).
+
+        Returns:
+            A dict with keys: deck, safety_score, warnings, timestamp.
+        """
+        # --- Pre-scan: fetch keyword ground-truth context ---
+        tech_reference = self._get_technical_context(deck_content)  # Fixed: was using undefined `prompt`
+
+        # --- Build prompts based on workflow mode ---
+        if error_log:
+            # DEBUGGING MODE: deck crashed, diagnose and fix
+            system_prompt = f"""You are a Senior Reservoir Simulation Expert (ECLIPSE/OPM Flow).
+
+            MODE: SIMULATOR DEBUGGER
+
+            Your task:
+            1. Analyze the provided Error Log. Confirm it is a valid ECLIPSE/OPM error log format.
+               If it is not, flag this clearly and suggest corrections before proceeding.
+            2. Cross-reference the error against the .DATA deck snippet.
+               Confirm the deck has all required sections (RUNSPEC, GRID, PROPS, SOLUTION, SCHEDULE).
+               Flag any missing or malformed sections.
+            3. Verify spelling of all keywords and section names against the ground-truth database below.
+               Flag and correct any misspellings (e.g. RANSPEC, SCEDULE).
+            4. Provide the EXACT keyword fix required to stop the crash.
+            5. Explain the underlying physics issue where relevant (e.g. CFL violation, PVT out of range,
+               negative pore volume, aquifer connectivity error).
+
+            GROUND-TRUTH KEYWORD REFERENCE:
+            {tech_reference}
+
+            STRICT RULES:
+            - Only use keywords present in the ground-truth reference above.
+            - Place every keyword in its correct section (RUNSPEC, GRID, EDIT, PROPS,
+              REGIONS, SOLUTION, SUMMARY, SCHEDULE).
+            - Never invent or approximate keyword names."""
+
+            user_content = f"SIMULATOR ERROR LOG:\n{error_log}\n\nDECK SNIPPET:\n{deck_content}"
+
+        else:
+            # QC MODE: proactive quality control and risk flagging
+            system_prompt = f"""You are a Senior Reservoir Simulation Expert (ECLIPSE/OPM Flow).
+
+            MODE: QUALITY CONTROL
+
+            Your task:
+            1. Confirm the input is a valid .DATA deck (correct format, required sections present).
+               If it is not, state this clearly and do not proceed with QC.
+            2. Perform a full Quality Control check and flag all technical risks.
+            3. Verify spelling of all keywords and section names against the ground-truth database below.
+               Flag and correct any misspellings.
+            4. Check that every keyword appears in its correct section.
+            5. When generating technical tables, avoid using HTML tags like <br>. Use concise bullet points within cells instead.
+
+            GROUND-TRUTH KEYWORD REFERENCE:
+            {tech_reference}
+
+            GOVERNANCE:
+            - You cannot bypass safety limits.
+            - This session operates under Zero Data Retention.
+            - Only use keywords present in the ground-truth reference above."""
+
+            user_content = f"Analyze this .DATA deck snippet:\n\n{deck_content}"
+
+        # --- Gate 1: Technical soundness check ---
+        is_sound, msg = self.is_input_technically_sound(system_prompt)
+        if not is_sound:
+            return {
+                "deck": f"BLOCKED: {msg}",
+                "safety_score": 0,
+                "warnings": [msg],
+                "timestamp": "N/A",
+            }
+
+        # --- Gate 2: Azure AI Content Safety filter ---
         is_safe, message = self.shield.analyze_text_safety(user_content)
-        
         if not is_safe:
             return {
-                "deck": "BLOCK: Input violated Azure AI Content Safety protocols.",
+                "deck": f"BLOCKED: Input violated Azure AI Content Safety protocols. Reason: {message}",
                 "safety_score": 0,
                 "warnings": [message],
-                "timestamp": "N/A"
+                "timestamp": "N/A",
             }
-        
 
-        raw_deck = self.engine.analyze_reservoir_task(model_choice, system_prompt, user_content)
-        
-        # HITL Hook: Calculate score before returning to UI
-        safety_score, warnings = self.calculate_safety_score(raw_deck, user_content)
-        
+        # --- Step 3: Call the inference engine ---
+        raw_response = self.engine.analyze_reservoir_task(model_choice, system_prompt, user_content)
+
+        # --- Step 4: Fact-check and score ---
+        fact_checks = self.verify_and_augment(raw_response)
+        safety_score = max(100 - (len(fact_checks) * 15), 10)
+
+        # --- Step 5: Return result ---
         return {
-            "deck": raw_deck,
+            "deck": raw_response,
             "safety_score": safety_score,
-            "warnings": warnings,
-            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }                
-              
+            "warnings": fact_checks,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
     def analyze_reservoir_data(self, df, user_query, model_choice):
-        df_info = df.describe().to_string()
-        system_prompt = "You are a Reservoir Data Analyst. Answer technical questions based on this data context."
-        user_content = f"DATA CONTEXT:\n{df_info}\n\nUSER QUESTION: {user_query}"
+        #df_info = df.describe().to_string()
+        system_prompt = "You are a Reservoir Data Analyst. Answer technical questions based on this data context. Add a footnote of technical resources and references"
+        user_content = f"DATA CONTEXT:\n{df}\n\nUSER QUESTION: {user_query}"
         
         is_safe, message = self.shield.analyze_text_safety(user_content)
         
@@ -196,7 +305,6 @@ class ReservoirAgent:
             warnings.append("⚠️ PHYSICAL IMPOSSIBILITY: Porosity > 45% is geologically unrealistic.")
             
         return warnings    
-    
     
     def calculate_safety_score(self, deck_content, user_req):
         """Multi-factor safety and realism scoring."""

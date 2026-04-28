@@ -1783,10 +1783,13 @@ elif selected_workspace == "Governance & Audit":
                     return "background-color: #b71c1c; color: white"
             return ""
 
-        styled = filtered_df.style.applymap(
+        styled = filtered_df.style.map(
             _score_colour,
             subset=["Safety_Score"] if "Safety_Score" in filtered_df.columns else [],
         )
+        # Applies function to each column
+        #df.style.apply(lambda col: ['background-color: yellow' if x > 0 else '' for x in col])
+
         st.dataframe(styled, use_container_width=True)
         st.caption(
             "🟢 Score ≥ 80 — acceptable  |  "
@@ -1873,9 +1876,15 @@ elif selected_workspace == "User Guide":
         "Each section covers one workspace with step-by-step instructions and tips."
     )
  
-    VIDEO_URL = ""  # ← paste your demo URL here when available
-    if VIDEO_URL:
-        st.video(VIDEO_URL)
+    VIDEO_URLS = {
+        "chapter-1-debug": "https://youtu.be/0XzDv_0Tmvs",
+        "chapter-2-asset": "https://youtu.be/gA9IlXxkEi4",
+        "chapter-3-relperm": "https://youtu.be/AlxsY8k4LD0",
+    }
+    if VIDEO_URLS:
+        st.video(VIDEO_URLS["chapter-1-debug"])
+        st.video(VIDEO_URLS["chapter-2-asset"])
+        st.video(VIDEO_URLS["chapter-3-relperm"])
     else:
         st.info("📹 Video walkthrough coming soon. Use the written guide below.")
  
@@ -1933,7 +1942,7 @@ elif selected_workspace == "User Guide":
         8. Tick **HITL checkbox** and export the full session or the last fix only.
  
         #### Tips
-        - You don't need a complete deck — a SCHEDULE section alone is valid input.
+        - Even with an incomplete deck or meaningless entry like "Ranspac", the agent will respond smartly and accordingly.
         - For large decks, paste the section nearest the error rather than the full file.
         - The agent validates keyword spelling and section placement against the
           ECLIPSE / OPM  keyword database — it cannot hallucinate a
@@ -1946,7 +1955,7 @@ elif selected_workspace == "User Guide":
         st.markdown("""
         #### Purpose
         Bulk Decline Curve Analysis and EUR estimation for up to 300 wells
-        across 10+ fields — matching the tester's production workflow.
+        across 10+ fields — matching the tester's feedback for production workflow.
  
         #### CSV Format
         Upload a file with exactly these four columns:
